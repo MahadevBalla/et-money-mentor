@@ -5,10 +5,12 @@ All math is deterministic. No LLM.
 """
 
 from __future__ import annotations
+
 import datetime
 
-from models.schemas import FIREPlan, SIPGoal, UserProfile, Goal
 from core.config import settings
+from models.schemas import FIREPlan, Goal, SIPGoal, UserProfile
+
 
 # Math primitives
 def compound_growth_value(present_value: float, rate: float, years: float) -> float:

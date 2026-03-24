@@ -6,15 +6,14 @@ Every function is independently unit-testable.
 """
 
 from __future__ import annotations
-from dataclasses import dataclass
 
+from core.config import settings
 from models.schemas import (
     AssetAllocation,
     DimensionScore,
     MoneyHealthResult,
     UserProfile,
 )
-from core.config import settings
 
 
 # Helpers
@@ -132,7 +131,6 @@ def score_investment_diversification(assets: AssetAllocation) -> DimensionScore:
 
     equity_pct = assets.equity / total
     cash_pct = assets.cash / total
-    debt_pct = (assets.debt + assets.ppf_epf) / total
     gold_pct = assets.gold / total
 
     penalties = 0.0

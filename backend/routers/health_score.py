@@ -5,17 +5,18 @@ Orchestration: Intake → Finance Engine → Mentor → Guardrail → Response.
 """
 
 from __future__ import annotations
+
 import logging
 
 from fastapi import APIRouter, HTTPException
 
+from agents.guardrail_agent import run_guardrail
 from agents.intake_agent import run_intake_agent
 from agents.mentor_agent import generate_health_advice
-from agents.guardrail_agent import run_guardrail
+from core.exceptions import MoneyMentorError, ValidationError
+from db.session_store import append_log, create_session
 from finance.health import calculate_money_health_score
-from db.session_store import create_session, append_log
-from models.schemas import HealthScoreResponse, ErrorResponse
-from core.exceptions import ValidationError, MoneyMentorError
+from models.schemas import ErrorResponse, HealthScoreResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["health-score"])

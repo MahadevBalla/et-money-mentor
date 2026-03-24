@@ -4,18 +4,19 @@ SQLite session store and agent audit log via SQLAlchemy async.
 """
 
 from __future__ import annotations
+
 import json
 import uuid
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import Column, String, Text, DateTime, ForeignKey, select
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy import Column, DateTime, ForeignKey, String, Text, select
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
 from core.config import settings
 
-engine = create_async_engine(settings.DATABASE_URL, echo=settings.DEBUG)
+engine = create_async_engine(settings.DATABASE_URL, echo=False)
 AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 
 
@@ -100,11 +101,11 @@ async def get_session_logs(session_id: str) -> list[dict]:
         logs = result.scalars().all()
         return [
             {
-                "agent": l.agent_name,
-                "step": l.step,
-                "timestamp": l.timestamp.isoformat(),
+                "agent": log.agent_name,
+                "step": log.step,
+                "timestamp": log.timestamp.isoformat(),
             }
-            for l in logs
+            for log in logs
         ]
 
 

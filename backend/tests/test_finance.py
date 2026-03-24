@@ -5,22 +5,24 @@ All tests are deterministic — no LLM, no DB, no network.
 Run: pytest tests/ -v
 """
 
+import os
+import sys
+
 import pytest
-import sys, os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+from finance import fire, health, tax
 from models.schemas import (
     AssetAllocation,
     DebtItem,
     Goal,
     GoalType,
     InsuranceCoverage,
+    RiskProfile,
     TaxDeductions,
     UserProfile,
-    RiskProfile,
 )
-from finance import health, fire, tax
 
 
 # Fixtures

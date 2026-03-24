@@ -6,10 +6,11 @@ Falls back to passing through with a standard disclaimer if LLM unavailable.
 """
 
 from __future__ import annotations
+
 import logging
 
-from core.llm_client import structured_chat
 from core.exceptions import LLMUnavailableError
+from core.llm_client import structured_chat
 from models.schemas import AgentAdvice
 
 logger = logging.getLogger(__name__)

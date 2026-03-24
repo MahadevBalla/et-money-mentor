@@ -6,6 +6,7 @@ Agents only call module-level chat_completion() and structured_chat() — never 
 """
 
 from __future__ import annotations
+
 import json
 import logging
 from abc import ABC, abstractmethod

@@ -6,8 +6,9 @@ Pure deterministic. No LLM.
 """
 
 from __future__ import annotations
-from models.schemas import TaxDeductions, TaxRegime, TaxRegimeComparison, UserProfile
+
 from core.config import settings
+from models.schemas import TaxDeductions, TaxRegime, TaxRegimeComparison, UserProfile
 
 
 # Tax slab helpers

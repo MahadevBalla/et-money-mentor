@@ -5,15 +5,16 @@ LLM is ONLY for narrative; all numbers come from the Finance Engine.
 """
 
 from __future__ import annotations
+
 import json
 import logging
 
-from core.llm_client import structured_chat
 from core.exceptions import LLMUnavailableError
+from core.llm_client import structured_chat
 from models.schemas import (
     AgentAdvice,
-    MoneyHealthResult,
     FIREPlan,
+    MoneyHealthResult,
     TaxRegimeComparison,
     UserProfile,
 )

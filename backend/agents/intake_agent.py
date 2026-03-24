@@ -5,13 +5,14 @@ If LLM is unavailable, falls back to direct Pydantic validation of the raw dict.
 """
 
 from __future__ import annotations
+
 import json
 import logging
 
 from pydantic import ValidationError as PydanticValidationError
 
-from core.llm_client import structured_chat
 from core.exceptions import LLMUnavailableError, ValidationError
+from core.llm_client import structured_chat
 from models.schemas import UserProfile
 
 logger = logging.getLogger(__name__)

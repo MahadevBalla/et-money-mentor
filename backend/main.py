@@ -5,6 +5,7 @@ Single responsibility: app setup, middleware, startup lifecycle, router mounting
 """
 
 from __future__ import annotations
+
 import logging
 import sys
 from contextlib import asynccontextmanager
@@ -16,12 +17,12 @@ from fastapi.responses import JSONResponse
 from core.config import settings
 from core.exceptions import MoneyMentorError
 from db.session_store import init_db
-from routers import health_score, fire_planner, tax_wizard
+from routers import fire_planner, health_score, tax_wizard
 
 # Logging
 logging.basicConfig(
     stream=sys.stdout,
-    level=logging.DEBUG if settings.DEBUG else logging.INFO,
+    level=logging.INFO,
     format="%(asctime)s | %(levelname)-8s | %(name)s — %(message)s",
 )
 logger = logging.getLogger("main")

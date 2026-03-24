@@ -4,17 +4,18 @@ POST /api/fire-planner — FIRE Path Planner feature.
 """
 
 from __future__ import annotations
+
 import logging
 
 from fastapi import APIRouter, HTTPException
 
+from agents.guardrail_agent import run_guardrail
 from agents.intake_agent import run_intake_agent
 from agents.mentor_agent import generate_fire_advice
-from agents.guardrail_agent import run_guardrail
+from core.exceptions import MoneyMentorError, ValidationError
+from db.session_store import append_log, create_session
 from finance.fire import build_fire_plan
-from db.session_store import create_session, append_log
-from models.schemas import FIREPlanResponse, ErrorResponse
-from core.exceptions import ValidationError, MoneyMentorError
+from models.schemas import ErrorResponse, FIREPlanResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["fire-planner"])
