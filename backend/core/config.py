@@ -62,6 +62,18 @@ class Settings(BaseSettings):
     DEFAULT_STEPUP_RATE: float = 0.10
     EMERGENCY_FUND_MONTHS: int = 6
 
+    # AMFI NAV feed
+    AMFI_NAV_URL: str = "https://portal.amfiindia.com/spages/NAVAll.txt"
+
+    # Nifty 50 long-run SIP XIRR benchmarks — update annually
+    # Basis: TRI (Total Return Index), SIP XIRR (not lump-sum CAGR)
+    # Conservative: bad decade / 20yr+ horizon convergence
+    # Base        : realistic 10yr SIP XIRR — most defensible default
+    # Optimistic  : strong decade (post-2014 era)
+    BENCHMARK_NIFTY50_CONSERVATIVE: float = 9.5    # percent p.a.
+    BENCHMARK_NIFTY50_BASE: float = 11.5            # percent p.a.
+    BENCHMARK_NIFTY50_OPTIMISTIC: float = 13.0      # percent p.a.
+
     # Filter empty strings produced by trailing commas in ALLOWED_ORIGINS
     # Without the `if o.strip()` guard, CORSMiddleware receives an empty-string
     # origin which matches every request, silently bypassing CORS policy.

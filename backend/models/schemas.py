@@ -97,42 +97,32 @@ class InsuranceCoverage(BaseModel):
 
 class TaxDeductions(BaseModel):
     section_80c: float = Field(
-        0.0,
-        ge=0,
-        le=150_000,
+        0.0, ge=0, le=150_000,
         description="Max ₹1.5L under Section 80C",
     )
     section_80d_self: float = Field(
-        0.0,
-        ge=0,
-        le=50_000,
-        description="₹25k for taxpayer <60 yrs; ₹50k for senior citizen (set section_80d_self_is_senior=True)",
+        0.0, ge=0, le=50_000,
+        description="₹25k for taxpayer <60 yrs; ₹50k for senior citizen",
     )
     section_80d_self_is_senior: bool = Field(
         False,
         description="Set True if taxpayer is ≥60 years old — raises 80D self limit to ₹50k",
     )
     section_80d_parents: float = Field(
-        0.0,
-        ge=0,
-        le=50_000,
-        description="₹25k for parents <60 yrs; ₹50k if parents are senior citizens (set section_80d_parents_are_senior=True)",
+        0.0, ge=0, le=50_000,
+        description="₹25k for parents <60 yrs; ₹50k if parents are senior citizens",
     )
     section_80d_parents_are_senior: bool = Field(
         False,
         description="Set True if parents are ≥60 years old — raises 80D parents limit to ₹50k",
     )
     nps_80ccd_1b: float = Field(
-        0.0,
-        ge=0,
-        le=50_000,
+        0.0, ge=0, le=50_000,
         description="Additional NPS deduction over 80C limit, max ₹50k",
     )
     hra_claimed: float = Field(0.0, ge=0)
     home_loan_interest: float = Field(
-        0.0,
-        ge=0,
-        le=200_000,
+        0.0, ge=0, le=200_000,
         description="Section 24(b) home loan interest, max ₹2L for self-occupied",
     )
     other_deductions: float = Field(0.0, ge=0)
@@ -302,6 +292,12 @@ class MFXRayResult(BaseModel):
     total_invested: float
     total_current_value: float
     overall_xirr: Optional[float] = None
+    # Nifty 50 benchmark tiers — percent p.a., SIP XIRR basis, TRI
+    # Conservative: bad decade / 20yr+ horizon | Base: 10yr realistic | Optimistic: strong decade
+    benchmark_conservative: float = 9.5
+    benchmark_base: float = 11.5
+    benchmark_optimistic: float = 13.0
+    xirr_vs_benchmark: Optional[float] = None   # vs base; positive = outperforming
     absolute_return_pct: float
     holdings: list[MFHolding]
     overlapping_pairs: list[OverlapPair]
@@ -402,14 +398,9 @@ class ErrorResponse(BaseModel):
     detail: Optional[str] = None
 
 
-# ============================================================================
-# AUTH & USER MODELS
-# ============================================================================
-
-
+# Authentication
 class UserCreate(BaseModel):
     """User signup request."""
-
     full_name: str = Field(..., min_length=2, max_length=50, description="Full name (2-50 chars)")
     email: EmailStr = Field(..., description="Valid email address")
     password: str = Field(
@@ -448,7 +439,6 @@ class UserCreate(BaseModel):
         """Validate and normalize Indian phone number."""
         if v is None:
             return None
-
         from core.security import normalize_phone, validate_indian_phone
 
         # Validate format
@@ -462,29 +452,26 @@ class UserCreate(BaseModel):
 
 class UserLogin(BaseModel):
     """User login request."""
-
     email: EmailStr
     password: str
 
 
 class UserResponse(BaseModel):
     """Public user data (returned by API) — NO PASSWORD!"""
-
     id: str
     full_name: str
     email: EmailStr
-    phone: Optional[str]
+    phone: Optional[str] = None
     is_verified: bool
     is_active: bool
     created_at: datetime
-    last_login_at: Optional[datetime]
+    last_login_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}
 
 
 class TokenResponse(BaseModel):
     """JWT token response after login/signup."""
-
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
@@ -493,19 +480,16 @@ class TokenResponse(BaseModel):
 
 class RefreshTokenRequest(BaseModel):
     """Request to refresh access token."""
-
     refresh_token: str
 
 
 class PasswordResetRequest(BaseModel):
     """Request password reset email."""
-
     email: EmailStr
 
 
 class PasswordResetConfirm(BaseModel):
     """Confirm password reset with token."""
-
     token: str
     new_password: str = Field(
         ...,
@@ -518,7 +502,6 @@ class PasswordResetConfirm(BaseModel):
     @classmethod
     def validate_password_strength(cls, v: str) -> str:
         from core.security import validate_password_strength
-
         is_valid, error_msg = validate_password_strength(v)
         if not is_valid:
             raise ValueError(error_msg)
@@ -527,12 +510,10 @@ class PasswordResetConfirm(BaseModel):
 
 class EmailVerificationRequest(BaseModel):
     """Request email verification resend."""
-
     email: EmailStr
 
 
 class EmailVerificationConfirm(BaseModel):
     """Confirm email with OTP/token."""
-
     email: EmailStr
     token: str = Field(..., min_length=6, max_length=6, description="6-digit OTP")

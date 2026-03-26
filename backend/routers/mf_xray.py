@@ -15,6 +15,7 @@ from agents.guardrail_agent import run_guardrail
 from agents.mf_xray_agent import generate_mf_xray_advice
 from core.exceptions import MoneyMentorError
 from db.session_store import append_log, create_session, update_session_state
+from finance.amfi import ensure_nav_cache
 from finance.mf_xray import (
     _infer_category,
     _parse_pdf_holdings,
@@ -28,19 +29,13 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["mf-xray"])
 
 _MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
-
-# Previously only file size was checked; a renamed .exe passed through silently.
 _ALLOWED_EXTENSIONS = {".csv", ".pdf"}
-
-# Browser/OS MIME types vary — application/octet-stream is the generic binary
-# fallback many clients send for CSVs, so we permit it and rely on extension +
-# magic-byte checks as the real enforcement layer.
 _ALLOWED_MIMETYPES = {
     "text/csv",
     "text/plain",
     "application/csv",
     "application/pdf",
-    "application/octet-stream",  # generic fallback — extension check is the gate
+    "application/octet-stream",
 }
 
 # PDF magic bytes: every valid PDF starts with %PDF
@@ -114,6 +109,9 @@ async def mf_xray(
 ) -> MFXRayResponse:
     session_id = await create_session("mf_xray")
     decision_log: list[dict] = []
+
+    # Ensure AMFI cache is warm — no-op if already fresh from startup
+    await ensure_nav_cache()
 
     # Layer 1: extension check
     # Catches obviously wrong file types before we read any bytes
@@ -205,6 +203,7 @@ async def mf_xray(
                     "total_invested": result.total_invested,
                     "absolute_return_pct": result.absolute_return_pct,
                     "overlap_pairs": len(result.overlapping_pairs),
+                    "xirr_vs_benchmark": result.xirr_vs_benchmark,
                 },
             )
         )
@@ -243,6 +242,8 @@ async def mf_xray(
             "total_current_value": result.total_current_value,
             "absolute_return_pct": result.absolute_return_pct,
             "overall_xirr": result.overall_xirr,
+            "benchmark_base": result.benchmark_base,
+            "xirr_vs_benchmark": result.xirr_vs_benchmark,
             "num_funds": len(result.holdings),
             "high_expense_funds": result.high_expense_funds,
         })

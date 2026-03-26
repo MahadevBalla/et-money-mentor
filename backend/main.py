@@ -17,6 +17,7 @@ from fastapi.responses import JSONResponse
 from core.config import settings
 from core.exceptions import MoneyMentorError
 from db.session_store import init_db
+from finance.amfi import ensure_nav_cache
 from routers import (
     auth,
     chat,
@@ -41,7 +42,17 @@ logger = logging.getLogger("main")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
-    logger.info("Database initialised. %s v%s ready.", settings.APP_NAME, settings.APP_VERSION)
+    logger.info("Database initialised.")
+
+    # Warm AMFI NAV cache — ensures first MF X-Ray request doesn't block
+    # Non-fatal: if AMFI is unreachable, live NAV falls back to statement NAV
+    try:
+        await ensure_nav_cache()
+        logger.info("AMFI NAV cache warmed successfully.")
+    except Exception as e:
+        logger.warning("AMFI NAV cache warm failed at startup: %s — continuing.", e)
+
+    logger.info("%s v%s ready.", settings.APP_NAME, settings.APP_VERSION)
     yield
     # Cleanup on shutdown (add DB pool dispose here, when we move to Postgres)
     logger.info("Shutting down.")

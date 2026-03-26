@@ -21,6 +21,8 @@ import numpy_financial as npf
 import pdfplumber
 from scipy.optimize import brentq
 
+from core.config import settings
+from finance.amfi import enrich_holding_nav
 from models.schemas import MFHolding, MFXRayResult, OverlapPair
 
 logger = logging.getLogger(__name__)
@@ -89,6 +91,20 @@ def compute_xirr(cash_flows: list[tuple[date, float]]) -> Optional[float]:
         return None
 
 
+# NAV enrichment helper
+def _enrich(isin: str, scheme_name: str, units: float, avg_nav: float) -> dict:
+    """
+    Return current_nav, invested_amount, current_value with live NAV where available.
+    Cost basis (invested_amount) always uses avg_nav from statement — never overwritten.
+    """
+    live_nav = enrich_holding_nav(isin, scheme_name, avg_nav)
+    return {
+        "current_nav": live_nav,
+        "invested_amount": round(units * avg_nav, 2),
+        "current_value": round(units * live_nav, 2),
+    }
+
+
 # CAMS CSV parser
 def parse_cams_csv(content: bytes) -> list[dict]:
     """
@@ -107,8 +123,8 @@ def parse_cams_csv(content: bytes) -> list[dict]:
 def _csv_rows_to_holdings(rows: list[dict]) -> list[MFHolding]:
     """
     Convert normalised CAMS CSV rows to MFHolding objects.
-    Rows with zero or missing closing_unit_balance are skipped — they
-    represent fully redeemed folios and contribute nothing to X-Ray analysis.
+    Rows with zero units and zero invested amount are skipped (fully redeemed folios).
+    Live NAV from AMFI is injected via _enrich(); falls back to statement NAV silently.
     """
     holdings = []
     for row in rows:
@@ -122,16 +138,17 @@ def _csv_rows_to_holdings(rows: list[dict]) -> list[MFHolding]:
 
         try:
             avg_nav = float(row.get("average_cost", 0) or 0)
+            isin = row.get("isin", "")
+            scheme_name = row.get("scheme_name", "Unknown Fund")
+
             holdings.append(
                 MFHolding(
-                    scheme_name=row.get("scheme_name", "Unknown Fund"),
-                    isin=row.get("isin", ""),
+                    scheme_name=scheme_name,
+                    isin=isin,
                     units=units,
                     avg_nav=avg_nav,
-                    current_nav=avg_nav,
-                    invested_amount=units * avg_nav,
-                    current_value=units * avg_nav,
-                    category=_infer_category(row.get("scheme_name", "")),
+                    category=_infer_category(scheme_name),
+                    **_enrich(isin, scheme_name, units, avg_nav),
                 )
             )
         except Exception as e:
@@ -157,14 +174,14 @@ def parse_cams_pdf(content: bytes) -> str:
 def _parse_pdf_holdings(text: str) -> list[MFHolding]:
     """
     Heuristic extraction of holdings from CAMS PDF text.
-    Looks for patterns like:
-      SCHEME NAME  ISIN  UNITS  NAV  VALUE
+    Looks for lines containing a valid ISIN and at least 3 numeric values.
+    Live NAV from AMFI is injected via _enrich(); falls back to statement NAV silently.
     """
     holdings = []
     isin_pattern = re.compile(r"(IN[A-Z0-9]{10})")
     lines = text.split("\n")
 
-    for i, line in enumerate(lines):
+    for line in lines:
         isin_match = isin_pattern.search(line)
         if not isin_match:
             continue
@@ -177,7 +194,7 @@ def _parse_pdf_holdings(text: str) -> list[MFHolding]:
             except ValueError:
                 pass
         if len(floats) >= 3:
-            units, nav, value = floats[-3], floats[-2], floats[-1]
+            units, nav = floats[-3], floats[-2]
             scheme_name = line[: isin_match.start()].strip()
             holdings.append(
                 MFHolding(
@@ -185,10 +202,8 @@ def _parse_pdf_holdings(text: str) -> list[MFHolding]:
                     isin=isin,
                     units=units,
                     avg_nav=nav,
-                    current_nav=nav,
-                    invested_amount=value,
-                    current_value=value,
                     category=_infer_category(scheme_name),
+                    **_enrich(isin, scheme_name or "", units, nav),
                 )
             )
     return holdings
@@ -209,34 +224,17 @@ def _infer_category(scheme_name: str) -> str:
         return "Small Cap"
     if any(k in name for k in ["mid cap", "midcap"]):
         return "Mid Cap"
-    if any(
-        k in name
-        for k in [
-            "large cap",
-            "largecap",
-            "bluechip",
-            "top 100",
-            "top100",
-            "frontline",
-            "focused 30",
-            "top 200",
-        ]
-    ):
+    if any(k in name for k in [
+        "large cap", "largecap", "bluechip", "top 100", "top100",
+        "frontline", "focused 30", "top 200",
+    ]):
         return "Large Cap"
     if "flexi" in name or "multi cap" in name:
         return "Flexi/Multi Cap"
     return "Equity"
 
 
-# Overlap detection (ISIN-based)
-
-# Minimal overlap data — in production, fetch from MFAPI or amfiindia.com
-# For hackathon: a small hardcoded overlap map for demo purposes
-_KNOWN_OVERLAPS: dict[tuple[str, str], list[str]] = {
-    # (isin_a, isin_b): [common_stock_names]
-}
-
-
+# Overlap detection
 def detect_overlap(holdings: list[MFHolding]) -> list[OverlapPair]:
     """Category-based overlap heuristic (production: replace with MFAPI holdings data)."""
     equity_funds = [h for h in holdings if h.category not in ("Liquid", "Debt")]
@@ -245,12 +243,7 @@ def detect_overlap(holdings: list[MFHolding]) -> list[OverlapPair]:
     for i in range(len(equity_funds)):
         for j in range(i + 1, len(equity_funds)):
             a, b = equity_funds[i], equity_funds[j]
-            # Same category → likely high overlap
-            if a.category == b.category and a.category in (
-                "Large Cap",
-                "Index/ETF",
-                "Flexi/Multi Cap",
-            ):
+            if a.category == b.category and a.category in ("Large Cap", "Index/ETF", "Flexi/Multi Cap"):
                 if a.category == "Large Cap":
                     overlap_pct = 65.0
                 elif a.category == "Index/ETF":
@@ -327,6 +320,7 @@ def analyse_portfolio(
     )
 
     overall_xirr = compute_xirr(cash_flows) if cash_flows else None
+    overall_xirr_pct = round(overall_xirr * 100, 2) if overall_xirr is not None else None
 
     overlap_pairs = detect_overlap(holdings)
     high_expense = flag_high_expense(holdings)
@@ -339,7 +333,14 @@ def analyse_portfolio(
     return MFXRayResult(
         total_invested=round(total_invested, 0),
         total_current_value=round(total_current, 0),
-        overall_xirr=round(overall_xirr * 100, 2) if overall_xirr is not None else None,
+        overall_xirr=overall_xirr_pct,
+        benchmark_conservative=settings.BENCHMARK_NIFTY50_CONSERVATIVE,
+        benchmark_base=settings.BENCHMARK_NIFTY50_BASE,
+        benchmark_optimistic=settings.BENCHMARK_NIFTY50_OPTIMISTIC,
+        xirr_vs_benchmark=(
+            round(overall_xirr_pct - settings.BENCHMARK_NIFTY50_BASE, 2)
+            if overall_xirr_pct is not None else None
+        ),
         absolute_return_pct=round(abs_return, 2),
         holdings=holdings,
         overlapping_pairs=overlap_pairs,
