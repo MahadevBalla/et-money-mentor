@@ -31,7 +31,7 @@ class Base(DeclarativeBase):
 class Session(Base):
     __tablename__ = "sessions"
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.utcnow())
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     feature = Column(String(64), nullable=False)
     state_json = Column(Text, default="{}")
 
@@ -44,7 +44,7 @@ class AgentLog(Base):
     step = Column(String(128), nullable=False)
     input_json = Column(Text, default="{}")
     output_json = Column(Text, default="{}")
-    timestamp = Column(DateTime(timezone=True), default=lambda: datetime.utcnow())
+    timestamp = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
 
 class User(Base):
@@ -70,9 +70,9 @@ class User(Base):
     verification_token_expires_at = Column(DateTime(timezone=True), nullable=True)
 
     # Timestamps
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.utcnow())
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     updated_at = Column(
-        DateTime(timezone=True), default=lambda: datetime.utcnow(), onupdate=lambda: datetime.utcnow()
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
     last_login_at = Column(DateTime(timezone=True), nullable=True)
 
@@ -92,7 +92,7 @@ class RefreshToken(Base):
     expires_at = Column(DateTime(timezone=True), nullable=False)
     is_revoked = Column(Boolean, default=False)
 
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.utcnow())
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     revoked_at = Column(DateTime(timezone=True), nullable=True)
 
 
@@ -124,7 +124,7 @@ async def append_log(
     entry = {
         "agent": agent_name,
         "step": step,
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "input_summary": _summarise(input_data),
         "output_summary": _summarise(output_data),
     }
@@ -166,11 +166,7 @@ def _summarise(data: Any) -> str:
     return text[:300] + "..." if len(text) > 300 else text
 
 
-# ============================================================================
-# USER REPOSITORY FUNCTIONS
-# ============================================================================
-
-
+# User lifecycle and auth management
 async def create_user(
     full_name: str, email: str, hashed_password: str, phone: Optional[str] = None
 ) -> User:
@@ -211,7 +207,7 @@ async def update_user_last_login(user_id: str) -> None:
         result = await db.execute(select(User).where(User.id == user_id))
         user = result.scalars().first()
         if user:
-            user.last_login_at = datetime.utcnow()
+            user.last_login_at = datetime.now(UTC)
             await db.commit()
 
 
@@ -245,7 +241,7 @@ async def revoke_refresh_token(token: str) -> bool:
         refresh_token = result.scalars().first()
         if refresh_token and not refresh_token.is_revoked:
             refresh_token.is_revoked = True
-            refresh_token.revoked_at = datetime.utcnow()
+            refresh_token.revoked_at = datetime.now(UTC)
             await db.commit()
             return True
         return False
@@ -263,7 +259,7 @@ async def revoke_all_user_tokens(user_id: str) -> int:
         count = len(tokens)
         for token in tokens:
             token.is_revoked = True
-            token.revoked_at = datetime.utcnow()
+            token.revoked_at = datetime.now(UTC)
         await db.commit()
         return count
 
