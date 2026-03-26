@@ -187,6 +187,13 @@ export function AnimatedSignin() {
   const yellowRef = useRef<HTMLDivElement>(null);
   const orangeRef = useRef<HTMLDivElement>(null);
 
+  // Redirect to profile if already authenticated
+  useEffect(() => {
+    if (authService.isAuthenticated()) {
+      router.push("/profile");
+    }
+  }, [router]);
+
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       setMouseX(e.clientX);
@@ -312,17 +319,21 @@ export function AnimatedSignin() {
 
         if (errorCode === "EMAIL_NOT_VERIFIED") {
           setError("Please check your email and verify your account before signing in.");
+          console.log("📧 Login failed: Email not verified for", email);
         } else if (errorCode === "ACCOUNT_INACTIVE") {
           setError("Your account has been deactivated. Please contact support.");
+          console.log("⛔ Login failed: Account inactive for", email);
         } else if (errorCode === "INVALID_CREDENTIALS") {
           setError("Invalid email or password. Please try again.");
+          console.log("🔑 Login failed: Invalid credentials for", email);
         } else {
           setError(errorMessage);
+          console.warn("⚠️ Login failed with code:", errorCode, "for", email);
         }
       } else {
         setError("An unexpected error occurred. Please try again.");
+        console.error("❌ Unexpected login error:", err);
       }
-      console.error("❌ Login error:", err);
     } finally {
       setIsLoading(false);
     }

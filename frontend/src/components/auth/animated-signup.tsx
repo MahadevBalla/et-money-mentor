@@ -199,6 +199,13 @@ export function AnimatedSignup() {
   const yellowRef = useRef<HTMLDivElement>(null);
   const orangeRef = useRef<HTMLDivElement>(null);
 
+  // Redirect to profile if already authenticated
+  useEffect(() => {
+    if (authService.isAuthenticated()) {
+      router.push("/profile");
+    }
+  }, [router]);
+
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       setMouseX(e.clientX);
@@ -369,6 +376,7 @@ export function AnimatedSignup() {
       if (err instanceof ApiException) {
         // Handle different types of backend errors
         let errorMessage = "Signup failed. Please try again.";
+        const errorCode = err.error?.code;
 
         if (err.error && typeof err.error.error === "string") {
           errorMessage = err.error.error;
@@ -379,12 +387,24 @@ export function AnimatedSignup() {
         }
 
         setError(errorMessage);
+
+        // Log based on error type
+        if (errorCode === "USER_ALREADY_EXISTS") {
+          console.log("👤 Signup failed: User already exists for", email);
+        } else if (errorCode === "VALIDATION_ERROR") {
+          console.log("📝 Signup failed: Validation error for", email);
+        } else if (errorCode === "EMAIL_SEND_FAILED") {
+          console.warn("📧 Signup warning: Email sending failed, but account created for", email);
+        } else {
+          console.warn("⚠️ Signup failed with code:", errorCode, "for", email);
+        }
       } else if (err instanceof Error) {
         setError(err.message);
+        console.error("❌ Unexpected signup error:", err);
       } else {
         setError("An unexpected error occurred.");
+        console.error("❌ Unknown signup error:", err);
       }
-      console.error("❌ Signup error:", err);
     } finally {
       setIsLoading(false);
     }

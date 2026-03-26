@@ -1,9 +1,20 @@
 import type { Metadata } from "next";
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
-import { ThemeProvider } from '@mui/material/styles';
-import { GeistSans } from "geist/font/sans";
+import { ThemeProvider } from '@mui/material/styles'; 
+import { Inter } from "next/font/google";
+import { Bricolage_Grotesque } from "next/font/google";
 import theme from "@/theme";
 import "./globals.css";
+
+const inter = Inter({ 
+  subsets: ["latin"],
+  variable: "--font-inter", // Optional: for CSS variables
+})
+const bricolage = Bricolage_Grotesque({ 
+  subsets: ["latin"],
+  display: 'swap',
+  variable: "--font-bricolage", 
+});
 
 export const metadata: Metadata = {
   title: {
@@ -46,8 +57,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={GeistSans.variable} suppressHydrationWarning>
-      <body className={GeistSans.className}>
+    <html lang="en" className={bricolage.variable} suppressHydrationWarning>
+      <body className={bricolage.className}>
         <AppRouterCacheProvider options={{ enableCssLayer: true }}>
           <ThemeProvider theme={theme}>
             {children}

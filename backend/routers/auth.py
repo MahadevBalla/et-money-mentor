@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import logging
 import secrets
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import ValidationError as PydanticValidationError
@@ -109,7 +109,7 @@ async def signup(user_data: UserCreate) -> dict:
         otp_str = str(otp)
 
         # Set OTP expiry (10 minutes)
-        otp_expires_at = datetime.now(UTC) + timedelta(minutes=10)
+        otp_expires_at = datetime.utcnow() + timedelta(minutes=10)
 
         # Store OTP in database
         await set_verification_token(user.id, otp_str, otp_expires_at)
@@ -185,7 +185,7 @@ async def verify_email(verification_data: EmailVerificationConfirm) -> TokenResp
             raise InvalidTokenError("Invalid verification code")
 
         # Check OTP expiry
-        if not user.verification_token_expires_at or datetime.now(UTC) > user.verification_token_expires_at:
+        if not user.verification_token_expires_at or datetime.utcnow() > user.verification_token_expires_at:
             raise TokenExpiredError("Verification code has expired. Please request a new one.")
 
         # Mark as verified
@@ -199,7 +199,7 @@ async def verify_email(verification_data: EmailVerificationConfirm) -> TokenResp
         refresh_token = create_refresh_token({"sub": user.id})
 
         # Store refresh token
-        refresh_expires_at = datetime.now(UTC) + timedelta(days=7)
+        refresh_expires_at = datetime.utcnow() + timedelta(days=7)
         await store_refresh_token(user.id, refresh_token, refresh_expires_at)
 
         # Refresh user object to get updated fields
@@ -252,7 +252,7 @@ async def resend_verification(request: EmailVerificationRequest) -> dict:
         # Generate new OTP
         otp = secrets.randbelow(900000) + 100000
         otp_str = str(otp)
-        otp_expires_at = datetime.now(UTC) + timedelta(minutes=10)
+        otp_expires_at = datetime.utcnow() + timedelta(minutes=10)
 
         # Store new OTP
         await set_verification_token(user.id, otp_str, otp_expires_at)
@@ -339,7 +339,7 @@ async def login(credentials: UserLogin) -> TokenResponse:
         refresh_token = create_refresh_token({"sub": user.id})
 
         # Store refresh token
-        refresh_expires_at = datetime.now(UTC) + timedelta(days=7)
+        refresh_expires_at = datetime.utcnow() + timedelta(days=7)
         await store_refresh_token(user.id, refresh_token, refresh_expires_at)
 
         # Refresh user to get updated last_login_at
@@ -401,7 +401,7 @@ async def refresh_access_token(request: RefreshTokenRequest) -> TokenResponse:
             raise InvalidTokenError("Refresh token has been revoked")
 
         # Check expiry
-        if datetime.now(UTC) > db_token.expires_at:
+        if datetime.utcnow() > db_token.expires_at:
             raise TokenExpiredError("Refresh token has expired. Please login again.")
 
         # Get user

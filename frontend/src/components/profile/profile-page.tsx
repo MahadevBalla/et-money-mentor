@@ -40,16 +40,16 @@ export function ProfilePage() {
         }
 
         // Fetch fresh user data from API
-        const userData = await authService.getMe();
+        const userData = await authService.authenticatedRequest(() => authService.getMe());
         setUser(userData);
       } catch (err) {
-        console.error("❌ Failed to load user data:", err);
-
-        if (err instanceof ApiException && err.status === 401) {
+        if (err instanceof ApiException && (err.status === 401 || err.status === 400)) {
           // User is not authenticated, redirect to signin
+          console.log("🔑 Authentication expired, redirecting to signin");
           authService.logout(); // Clear any invalid tokens
           router.push("/signin");
         } else {
+          console.error("❌ Failed to load user data:", err);
           setError("Failed to load profile data. Please try refreshing the page.");
         }
       } finally {

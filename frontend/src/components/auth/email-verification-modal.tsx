@@ -66,11 +66,21 @@ export function EmailVerificationModal({
 
     } catch (err) {
       if (err instanceof ApiException) {
+        const errorCode = err.error?.code;
         setError(err.error.error || "Verification failed. Please check your code and try again.");
+
+        // Log based on error type
+        if (errorCode === "INVALID_TOKEN" || errorCode === "TOKEN_EXPIRED") {
+          console.log("🔢 Verification failed: Invalid or expired OTP for", signupResponse.email);
+        } else if (errorCode === "USER_NOT_FOUND") {
+          console.warn("👤 Verification warning: User not found for", signupResponse.email);
+        } else {
+          console.warn("⚠️ Verification failed with code:", errorCode, "for", signupResponse.email);
+        }
       } else {
         setError("An unexpected error occurred. Please try again.");
+        console.error("❌ Unexpected verification error:", err);
       }
-      console.error("❌ Email verification error:", err);
     } finally {
       setIsLoading(false);
     }
@@ -90,11 +100,23 @@ export function EmailVerificationModal({
 
     } catch (err) {
       if (err instanceof ApiException) {
+        const errorCode = err.error?.code;
         setError(err.error.error || "Failed to resend verification code. Please try again.");
+
+        // Log based on error type
+        if (errorCode === "USER_NOT_FOUND") {
+          console.warn("👤 Resend warning: User not found for", signupResponse.email);
+        } else if (errorCode === "ALREADY_VERIFIED") {
+          console.log("✅ Resend info: Email already verified for", signupResponse.email);
+        } else if (errorCode === "EMAIL_SEND_FAILED") {
+          console.warn("📧 Resend warning: Email sending failed for", signupResponse.email);
+        } else {
+          console.warn("⚠️ Resend failed with code:", errorCode, "for", signupResponse.email);
+        }
       } else {
         setError("An unexpected error occurred while resending the code.");
+        console.error("❌ Unexpected resend error:", err);
       }
-      console.error("❌ Resend verification error:", err);
     } finally {
       setIsResending(false);
     }

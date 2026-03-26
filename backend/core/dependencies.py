@@ -59,8 +59,11 @@ async def get_current_user(
     except AuthenticationError:
         raise
     except Exception as e:
-        # Catch JWT decode errors, expired tokens, etc.
-        raise AuthenticationError(f"Invalid or expired token: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"error": f"Invalid or expired token: {str(e)}", "code": "INVALID_TOKEN"},
+            headers={"WWW-Authenticate": "Bearer"},
+    )
 
 
 async def require_verified_user(

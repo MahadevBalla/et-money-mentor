@@ -192,17 +192,19 @@ class AuthService {
   }
 
   /**
-   * Get current user profile
+   * Get current user profile with automatic token refresh
    */
   async getMe(): Promise<UserResponse> {
-    const response = await api.get<UserResponse>("/api/auth/me", this.getAuthHeaders());
+    return this.authenticatedRequest(async () => {
+      const response = await api.get<UserResponse>("/api/auth/me", this.getAuthHeaders());
 
-    // Update user data in localStorage
-    if (typeof window !== "undefined") {
-      localStorage.setItem("user", JSON.stringify(response));
-    }
+      // Update user data in localStorage
+      if (typeof window !== "undefined") {
+        localStorage.setItem("user", JSON.stringify(response));
+      }
 
-    return response;
+      return response;
+    });
   }
 
   /**
@@ -229,13 +231,15 @@ class AuthService {
   }
 
   /**
-   * Logout from all devices
+   * Logout from all devices with automatic token refresh
    */
   async logoutAll(): Promise<LogoutResponse> {
-    const response = await api.post<LogoutResponse>("/api/auth/logout-all", {}, this.getAuthHeaders());
+    return this.authenticatedRequest(async () => {
+      const response = await api.post<LogoutResponse>("/api/auth/logout-all", {}, this.getAuthHeaders());
 
-    this.clearTokens();
-    return response;
+      this.clearTokens();
+      return response;
+    });
   }
 
   /**
