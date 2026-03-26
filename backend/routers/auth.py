@@ -61,11 +61,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
-# ============================================================================
-# SIGNUP
-# ============================================================================
-
-
+# Signup
 @router.post(
     "/signup",
     status_code=status.HTTP_201_CREATED,
@@ -145,11 +141,7 @@ async def signup(user_data: UserCreate) -> dict:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail={"error": str(e), "code": "INTERNAL_ERROR"})
 
 
-# ============================================================================
-# EMAIL VERIFICATION
-# ============================================================================
-
-
+# Email Verification
 @router.post(
     "/verify-email",
     responses={
@@ -284,11 +276,7 @@ async def resend_verification(request: EmailVerificationRequest) -> dict:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail={"error": str(e), "code": "INTERNAL_ERROR"})
 
 
-# ============================================================================
-# LOGIN
-# ============================================================================
-
-
+# Login
 @router.post(
     "/login",
     responses={
@@ -373,11 +361,7 @@ async def login(credentials: UserLogin) -> TokenResponse:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail={"error": str(e), "code": "INTERNAL_ERROR"})
 
 
-# ============================================================================
-# REFRESH TOKEN
-# ============================================================================
-
-
+# Refresh Token
 @router.post(
     "/refresh",
     responses={
@@ -460,11 +444,7 @@ async def refresh_access_token(request: RefreshTokenRequest) -> TokenResponse:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail={"error": str(e), "code": "INTERNAL_ERROR"})
 
 
-# ============================================================================
-# LOGOUT
-# ============================================================================
-
-
+# Logout
 @router.post(
     "/logout",
     responses={
@@ -517,7 +497,7 @@ async def logout_all(user: User = Depends(get_current_user)) -> dict:
         logger.info(f"User {user.email} logged out from all devices ({count} tokens revoked)")
 
         return {
-            "message": f"Logged out from all devices successfully",
+            "message": "Logged out from all devices successfully",
             "tokens_revoked": count,
             "scope": "all_devices",
         }
@@ -527,11 +507,7 @@ async def logout_all(user: User = Depends(get_current_user)) -> dict:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail={"error": str(e), "code": "INTERNAL_ERROR"})
 
 
-# ============================================================================
-# GET CURRENT USER
-# ============================================================================
-
-
+# Get Current User
 @router.get(
     "/me",
     response_model=UserResponse,
