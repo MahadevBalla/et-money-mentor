@@ -3,6 +3,8 @@
  */
 import { api } from "@/lib/api";
 import type { HealthScoreApiResponse, HealthScorePayload } from "@/lib/health-score-types";
+import type { FIREPayload, FIREApiResponse } from "@/lib/fire-types";
+
 
 // ─── Shared types ────────────────────────────────────────────────────────────
 
@@ -76,8 +78,8 @@ export interface FIREResponse {
   decision_log: unknown[];
 }
 
-export async function getFIREPlan(data: Record<string, unknown>): Promise<FIREResponse> {
-  return api.post<FIREResponse>("/api/fire-planner", data);
+export async function getFIREPlan(data: FIREPayload): Promise<FIREApiResponse> {
+  return api.post<FIREApiResponse>("/api/fire-planner", data);
 }
 
 // ─── Tax Wizard ───────────────────────────────────────────────────────────────
