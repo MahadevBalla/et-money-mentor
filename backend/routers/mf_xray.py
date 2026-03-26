@@ -14,7 +14,7 @@ from fastapi import APIRouter, File, HTTPException, UploadFile
 from agents.guardrail_agent import run_guardrail
 from agents.mf_xray_agent import generate_mf_xray_advice
 from core.exceptions import MoneyMentorError
-from db.session_store import append_log, create_session
+from db.session_store import append_log, create_session, update_session_state
 from finance.mf_xray import (
     _infer_category,
     _parse_pdf_holdings,
@@ -237,6 +237,15 @@ async def mf_xray(
                 {"status": "MODIFIED" if issues else "PASS", "issues": issues},
             )
         )
+
+        await update_session_state(session_id, "mf_xray", {
+            "total_invested": result.total_invested,
+            "total_current_value": result.total_current_value,
+            "absolute_return_pct": result.absolute_return_pct,
+            "overall_xirr": result.overall_xirr,
+            "num_funds": len(result.holdings),
+            "high_expense_funds": result.high_expense_funds,
+        })
 
         return MFXRayResponse(
             session_id=session_id,

@@ -13,7 +13,7 @@ from agents.guardrail_agent import run_guardrail
 from agents.intake_agent import run_intake_agent
 from agents.mentor_agent import generate_fire_advice
 from core.exceptions import MoneyMentorError, ValidationError
-from db.session_store import append_log, create_session
+from db.session_store import append_log, create_session, update_session_state
 from finance.fire import build_fire_plan
 from models.schemas import ErrorResponse, FIREPlanResponse
 
@@ -81,6 +81,16 @@ async def fire_planner(raw_data: dict) -> FIREPlanResponse:
                 {"status": "MODIFIED" if issues else "PASS"},
             )
         )
+
+        await update_session_state(session_id, "fire", {
+            "fi_corpus_required": result.fi_corpus_required,
+            "required_monthly_sip": result.required_monthly_sip,
+            "projected_fi_age": result.projected_fi_age,
+            "years_to_fi": result.years_to_fi,
+            "on_track": result.on_track,
+            "current_age": profile.age,
+            "retirement_age": profile.retirement_age,
+        })
 
         return FIREPlanResponse(
             session_id=session_id,

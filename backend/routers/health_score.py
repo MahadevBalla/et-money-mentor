@@ -14,7 +14,7 @@ from agents.guardrail_agent import run_guardrail
 from agents.intake_agent import run_intake_agent
 from agents.mentor_agent import generate_health_advice
 from core.exceptions import MoneyMentorError, ValidationError
-from db.session_store import append_log, create_session
+from db.session_store import append_log, create_session, update_session_state
 from finance.health import calculate_money_health_score
 from models.schemas import ErrorResponse, HealthScoreResponse
 
@@ -79,6 +79,14 @@ async def health_score(raw_data: dict) -> HealthScoreResponse:
                 {"status": "MODIFIED" if issues else "PASS", "issues": issues},
             )
         )
+
+        await update_session_state(session_id, "health_score", {
+            "overall_score": result.overall_score,
+            "grade": result.grade,
+            "monthly_surplus": result.monthly_surplus,
+            "total_net_worth": result.total_net_worth,
+            "monthly_income": profile.monthly_gross_income,
+        })
 
         return HealthScoreResponse(
             session_id=session_id,

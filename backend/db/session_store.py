@@ -291,3 +291,19 @@ async def verify_user_email(user_id: str) -> bool:
             await db.commit()
             return True
         return False
+
+
+async def update_session_state(session_id: str, feature: str, result_summary: dict) -> None:
+    """Write computed feature result into session state_json for chat context injection."""
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(select(Session).where(Session.id == session_id))
+        session = result.scalars().first()
+        if session:
+            existing = {}
+            try:
+                existing = json.loads(session.state_json or "{}")
+            except Exception:
+                pass
+            existing[feature] = result_summary
+            session.state_json = json.dumps(existing)
+            await db.commit()

@@ -214,7 +214,8 @@ async def structured_chat(
         text = text.split("```", 2)[1]
         if text.startswith("json"):
             text = text[4:]
-        text = text.rsplit("```", 1)
+        if "```" in text:
+            text = text.rsplit("```", 1)[0]
     data = json.loads(text.strip())
 
     # Log missing keys so they surface in structured logs / Sentry.

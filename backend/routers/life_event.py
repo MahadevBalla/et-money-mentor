@@ -13,7 +13,7 @@ from agents.guardrail_agent import run_guardrail
 from agents.intake_agent import run_intake_agent
 from agents.life_event_agent import generate_life_event_advice
 from core.exceptions import MoneyMentorError, ValidationError
-from db.session_store import append_log, create_session
+from db.session_store import append_log, create_session, update_session_state
 from finance.life_event import analyse_life_event
 from models.schemas import ErrorResponse, LifeEventInput, LifeEventResponse, LifeEventType
 
@@ -89,6 +89,13 @@ async def life_event(raw_data: dict) -> LifeEventResponse:
                 {"status": "MODIFIED" if issues else "PASS", "issues": issues},
             )
         )
+
+        await update_session_state(session_id, "life_event", {
+            "event_type": result.event_type.value,
+            "event_amount": result.event_amount,
+            "tax_impact": result.tax_impact,
+            "allocations": [{"category": a.category, "amount": a.amount} for a in result.allocations],
+        })
 
         return LifeEventResponse(
             session_id=session_id,
