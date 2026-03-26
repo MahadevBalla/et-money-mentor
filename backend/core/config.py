@@ -20,6 +20,20 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "sqlite+aiosqlite:///./money_mentor.db"
 
+    # Security & JWT
+    SECRET_KEY: str = "CHANGE_THIS_IN_PRODUCTION_USE_openssl_rand_hex_32"
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15  # 15 minutes
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7  # 7 days
+
+    # Email / SMTP
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM_EMAIL: str = ""
+    SMTP_FROM_NAME: str = "AI Money Mentor"
+
     # LLM provider selection
     LLM_PROVIDER: str = "groq"  # "groq" | "gemini"
 

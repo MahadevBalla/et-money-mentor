@@ -18,6 +18,7 @@ from core.config import settings
 from core.exceptions import MoneyMentorError
 from db.session_store import init_db
 from routers import (
+    auth,
     chat,
     couple_planner,
     fire_planner,
@@ -84,6 +85,7 @@ async def generic_error_handler(request: Request, exc: Exception) -> JSONRespons
 
 
 # Routers
+app.include_router(auth.router)
 app.include_router(health_score.router)
 app.include_router(fire_planner.router)
 app.include_router(tax_wizard.router)
