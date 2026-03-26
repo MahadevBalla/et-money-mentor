@@ -41,6 +41,13 @@ Hard rules:
 1. Never invent return rates — cite "historical equity returns of ~12% p.a." style.
 2. Always end advice with a one-line disclaimer.
 3. If asked about illegal activity or market manipulation — refuse politely.
+
+When user asks about their financial plan (FIRE, health score, tax, etc.):
+- ALWAYS reference projected_fi_age, corpus_gap, monthly_surplus, and required SIP vs actual surplus.
+- Highlight if surplus > required SIP — tell them they can ACCELERATE their FIRE.
+- Mention projected FI age if it's earlier than retirement age — that's a win worth calling out.
+- Give 2–3 specific, numbers-backed next steps.
+- Never give generic advice when you have real numbers in the session context.
 """
 
 
@@ -83,16 +90,67 @@ def _parse_logs_to_history(logs: list) -> list[dict]:
             pass
     return history
 
+def _fmt(x) -> str:
+    if isinstance(x, (int, float)):
+        return f"₹{x:,}"
+    return str(x) if x is not None else "N/A"
 
 def _parse_state_to_context(session: Session | None) -> str:
-    if session and session.state_json and session.state_json != "{}":
-        try:
-            state = json.loads(session.state_json)
-            return f"\n\n[User's financial context from this session: {json.dumps(state)[:800]}]"
-        except Exception:
-            pass
-    return ""
+    if not session or not session.state_json or session.state_json == "{}":
+        return ""
+    try:
+        state = json.loads(session.state_json)
+    except Exception:
+        return ""
 
+    lines: list[str] = []
+
+    fire = state.get("fire")
+    if fire:
+        lines.append("----- User's FIRE Plan -----")
+        lines.append(f"- Required corpus:       {_fmt(fire.get('fi_corpus_required'))}")
+        lines.append(f"- Current corpus:        {_fmt(fire.get('current_corpus'))}")
+        lines.append(f"- Corpus gap:            {_fmt(fire.get('corpus_gap'))}")
+        lines.append(f"- Required monthly SIP:  {_fmt(fire.get('required_monthly_sip'))}")
+        lines.append(f"- Step-up SIP option:    {_fmt(fire.get('required_stepup_sip'))}/mo (+10%/yr)")
+        lines.append(f"- Projected FI age:      {fire.get('projected_fi_age', 'N/A')}")
+        lines.append(f"- Years to FI:           {fire.get('years_to_fi', 'N/A')}")
+        if fire.get("on_track"):
+            lines.append("- Status: On track")
+        else:
+            lines.append("- Status: Off track")
+
+    health = state.get("health")
+    if health:
+        lines.append("----- Money Health Score -----")
+        lines.append(f"- Score: {health.get('overall_score')} / 100 (Grade {health.get('grade')})")
+        lines.append(f"- Monthly surplus: {_fmt(health.get('monthly_surplus'))}")
+        lines.append(f"- Net worth: {_fmt(health.get('total_net_worth'))}")
+        for d in health.get("dimensions", []):
+            lines.append(f"  • {d.get('name')}: {d.get('score')} ({d.get('label')}) — {d.get('insight')}")
+
+    if health and fire:
+        delta = health.get("monthly_surplus", 0) - fire.get("required_monthly_sip", 0)
+        lines.append(f"- Surplus vs SIP delta:  {_fmt(delta)}")
+
+
+    tax = state.get("tax")
+    if tax:
+        lines.append("----- Tax Wizard -----")
+        lines.append(f"- Old regime: ₹{tax.get('old_regime_tax', 0):,} | New: ₹{tax.get('new_regime_tax', 0):,}")
+        lines.append(f"- Recommended: {tax.get('recommended_regime')} | Saving: ₹{tax.get('savings_by_switching', 0):,}")
+
+    profile = state.get("profile")
+    if profile:
+        lines.append("----- User Profile -----")
+        surplus = profile.get('monthly_gross_income', 0) - profile.get('monthly_expenses', 0)
+        lines.append(f"- Age: {profile.get('age')} | Surplus: ₹{surplus:,}/mo")
+        lines.append(f"- Risk: {profile.get('risk_profile')} | Retirement age: {profile.get('retirement_age')}")
+
+    if not lines:
+        return f"\n\n[User's financial context: {json.dumps(state)[:600]}]"
+
+    return "\n\n" + "\n".join(lines)
 
 @router.post("/chat")
 async def chat(req: ChatRequest) -> ChatResponse:
