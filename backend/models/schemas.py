@@ -180,6 +180,14 @@ class SIPGoal(BaseModel):
     current_on_track: bool
 
 
+class YearlyProjection(BaseModel):
+    year: int
+    age: int
+    sip: float
+    corpus: float
+    invested: float
+
+
 class FIREPlan(BaseModel):
     fi_corpus_required: float
     current_corpus: float
@@ -187,11 +195,12 @@ class FIREPlan(BaseModel):
     required_monthly_sip: float
     required_stepup_sip: float = 0.0
     stepup_rate: float = 0.10
-    projected_fi_age: Optional[float] = None  # None = FI not reachable within 60 years
+    projected_fi_age: Optional[float] = None
     years_to_fi: float
     monthly_retirement_expense: float
     sip_goals: list[SIPGoal]
     on_track: bool
+    yearly_projections: list[YearlyProjection] = Field(default_factory=list)
 
 
 # Health

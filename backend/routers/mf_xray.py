@@ -17,11 +17,11 @@ from core.exceptions import MoneyMentorError
 from db.session_store import append_log, create_session, update_session_state
 from finance.amfi import ensure_nav_cache
 from finance.mf_xray import (
-    _infer_category,
-    _parse_pdf_holdings,
     analyse_portfolio,
+    csv_rows_to_holdings,
     parse_cams_csv,
     parse_cams_pdf,
+    parse_pdf_holdings,
 )
 from models.schemas import ErrorResponse, MFHolding, MFXRayResponse
 
@@ -40,59 +40,6 @@ _ALLOWED_MIMETYPES = {
 
 # PDF magic bytes: every valid PDF starts with %PDF
 _PDF_MAGIC = b"%PDF"
-
-
-def _extract_float(row: dict, keys: list[str], default: str = "0") -> float:
-    """Extract and convert a float value from row using fallback keys."""
-    value = next((row.get(key) for key in keys if row.get(key)), default)
-    return float(str(value).replace(",", ""))
-
-
-def _extract_string(row: dict, keys: list[str], default: str = "") -> str:
-    """Extract a string value from row using fallback keys."""
-    return next((row.get(key) for key in keys if row.get(key)), default)
-
-
-def _csv_rows_to_holdings(rows: list[dict]) -> list[MFHolding]:
-    """Convert normalised CAMS CSV rows → MFHolding objects."""
-    holdings: list[MFHolding] = []
-    for row in rows:
-        try:
-            scheme = _extract_string(row, ["scheme_name", "scheme", "fund_name"], "Unknown Fund")
-            isin = _extract_string(row, ["isin", "isin_div_reinv_flag"], f"UNKNOWN_{len(holdings)}")
-            units = _extract_float(row, ["closing_unit_balance", "units"])
-            avg_nav = _extract_float(row, ["average_cost", "avg_nav", "purchase_nav"])
-            current_nav = _extract_float(row, ["nav", "current_nav"], str(avg_nav))
-            invested = _extract_float(row, ["cost_value", "invested_amount"])
-            current = _extract_float(row, ["market_value", "current_value"])
-
-            expense_ratio_raw = _extract_float(
-                row, ["expense_ratio", "ter", "expense_ratio_%"], "0"
-            )
-            expense_ratio = expense_ratio_raw if expense_ratio_raw > 0 else None
-
-            if units == 0 and invested == 0:
-                continue
-
-            current_nav = current_nav if current_nav > 0 else avg_nav
-            current_value = current if current > 0 else units * current_nav
-
-            holdings.append(
-                MFHolding(
-                    scheme_name=scheme,
-                    isin=isin,
-                    units=units,
-                    avg_nav=avg_nav,
-                    current_nav=current_nav,
-                    invested_amount=invested,
-                    current_value=current_value,
-                    category=_infer_category(scheme),
-                    expense_ratio=expense_ratio,
-                )
-            )
-        except (ValueError, KeyError):
-            continue
-    return holdings
 
 
 @router.post(
@@ -166,11 +113,11 @@ async def mf_xray(
 
         if ext == ".csv":
             rows = parse_cams_csv(content)
-            holdings = _csv_rows_to_holdings(rows)
+            holdings = csv_rows_to_holdings(rows)
         else:
             # ext == ".pdf" — already magic-byte validated above
             text = parse_cams_pdf(content)
-            holdings = _parse_pdf_holdings(text)
+            holdings = parse_pdf_holdings(text)
 
         if not holdings:
             raise HTTPException(

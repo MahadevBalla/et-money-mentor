@@ -10,7 +10,7 @@ import datetime
 from typing import Optional
 
 from core.config import settings
-from models.schemas import FIREPlan, Goal, SIPGoal, UserProfile
+from models.schemas import FIREPlan, Goal, SIPGoal, UserProfile, YearlyProjection
 
 _CURRENT_YEAR = datetime.date.today().year
 
@@ -123,6 +123,44 @@ def projected_fi_age(
     return None  # FI not reachable within 60-year horizon
 
 
+def build_yearly_projections(
+    current_age: int,
+    retirement_age: int,
+    current_corpus: float,
+    monthly_sip: float,
+    annual_rate: float,
+    annual_stepup_rate: float,
+) -> list[dict]:
+    """
+    Year-by-year corpus projection for frontend charting.
+    Returns list of {year, age, sip, corpus, invested} dicts.
+    Monthly compounding: each month corpus grows by r = annual_rate/12, then SIP added.
+    Step-up applied once per year after all 12 months complete.
+    """
+    projections = []
+    corpus = current_corpus
+    sip = monthly_sip
+    cumulative_invested = current_corpus
+    r = annual_rate / 12
+
+    for i in range(retirement_age - current_age):
+        for _ in range(12):
+            corpus = corpus * (1 + r) + sip
+            cumulative_invested += sip
+
+        projections.append({
+            "year": _CURRENT_YEAR + i + 1,
+            "age": current_age + i + 1,
+            "sip": round(sip, 0),
+            "corpus": round(corpus, 0),
+            "invested": round(cumulative_invested, 0),
+        })
+
+        sip *= (1 + annual_stepup_rate)
+
+    return projections
+
+
 # FIRE corpus target
 def calculate_fi_corpus(profile: UserProfile) -> float:
     """
@@ -150,7 +188,7 @@ _GOAL_RATE_MAP: dict[str, float] = {
 }
 
 
-def plan_goal_sip(goal: Goal, current_age: int, annual_stepup: float = 0.10) -> SIPGoal:
+def plan_goal_sip(goal: Goal, annual_stepup: float = 0.10) -> SIPGoal:
     years = float(max(goal.target_year - _CURRENT_YEAR, 1))
     rate = _GOAL_RATE_MAP.get(goal.type.value, settings.DEFAULT_EQUITY_RETURN)
     flat_sip = required_monthly_sip(goal.target_amount, 0.0, rate, years)
@@ -195,7 +233,16 @@ def build_fire_plan(profile: UserProfile, annual_stepup: float = 0.10) -> FIREPl
         profile.monthly_expenses, settings.DEFAULT_INFLATION_RATE, years_left
     )
 
-    goal_sips = [plan_goal_sip(g, profile.age, annual_stepup) for g in profile.goals]
+    goal_sips = [plan_goal_sip(g, annual_stepup) for g in profile.goals]
+
+    yearly_projections = build_yearly_projections(
+        current_age=profile.age,
+        retirement_age=profile.retirement_age,
+        current_corpus=current_corpus,
+        monthly_sip=investable,
+        annual_rate=rate,
+        annual_stepup_rate=annual_stepup,
+    )
 
     return FIREPlan(
         fi_corpus_required=round(corpus_target, 0),
@@ -209,4 +256,5 @@ def build_fire_plan(profile: UserProfile, annual_stepup: float = 0.10) -> FIREPl
         monthly_retirement_expense=round(monthly_ret_expense, 0),
         sip_goals=goal_sips,
         on_track=fi_age is not None and fi_age <= profile.retirement_age,
+        yearly_projections=[YearlyProjection(**p) for p in yearly_projections],
     )

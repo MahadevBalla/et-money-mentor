@@ -105,6 +105,43 @@ def _enrich(isin: str, scheme_name: str, units: float, avg_nav: float) -> dict:
     }
 
 
+# Category inference
+def _infer_category(scheme_name: str) -> str:
+    name = scheme_name.lower()
+    if any(k in name for k in ["liquid", "overnight", "money market"]):
+        return "Liquid"
+    if any(k in name for k in ["debt", "bond", "gilt", "credit", "short duration", "low duration"]):
+        return "Debt"
+    if any(k in name for k in ["hybrid", "balanced", "asset alloc"]):
+        return "Hybrid"
+    if any(k in name for k in ["index", "nifty", "sensex", "etf"]):
+        return "Index/ETF"
+    if any(k in name for k in ["small cap", "smallcap"]):
+        return "Small Cap"
+    if any(k in name for k in ["mid cap", "midcap"]):
+        return "Mid Cap"
+    if any(k in name for k in [
+        "large cap", "largecap", "bluechip", "top 100", "top100",
+        "frontline", "focused 30", "top 200",
+    ]):
+        return "Large Cap"
+    if "flexi" in name or "multi cap" in name:
+        return "Flexi/Multi Cap"
+    return "Equity"
+
+
+# Parse helpers
+def _extract_float(row: dict, keys: list[str], default: str = "0") -> float:
+    """Extract and convert a float value from row using fallback keys."""
+    value = next((row.get(key) for key in keys if row.get(key)), default)
+    return float(str(value).replace(",", ""))
+
+
+def _extract_string(row: dict, keys: list[str], default: str = "") -> str:
+    """Extract a string value from row using fallback keys."""
+    return next((row.get(key) for key in keys if row.get(key)), default)
+
+
 # CAMS CSV parser
 def parse_cams_csv(content: bytes) -> list[dict]:
     """
@@ -120,40 +157,44 @@ def parse_cams_csv(content: bytes) -> list[dict]:
     return rows
 
 
-def _csv_rows_to_holdings(rows: list[dict]) -> list[MFHolding]:
-    """
-    Convert normalised CAMS CSV rows to MFHolding objects.
-    Rows with zero units and zero invested amount are skipped (fully redeemed folios).
-    Live NAV from AMFI is injected via _enrich(); falls back to statement NAV silently.
-    """
-    holdings = []
+def csv_rows_to_holdings(rows: list[dict]) -> list[MFHolding]:
+    """Convert normalised CAMS CSV rows → MFHolding objects."""
+    holdings: list[MFHolding] = []
     for row in rows:
         try:
-            units = float(row.get("closing_unit_balance", 0) or 0)
-        except (ValueError, TypeError):
-            units = 0.0
+            scheme = _extract_string(row, ["scheme_name", "scheme", "fund_name"], "Unknown Fund")
+            isin = _extract_string(row, ["isin", "isin_div_reinv_flag"], f"UNKNOWN_{len(holdings)}")
+            units = _extract_float(row, ["closing_unit_balance", "units"])
+            avg_nav = _extract_float(row, ["average_cost", "avg_nav", "purchase_nav"])
+            invested = _extract_float(row, ["cost_value", "invested_amount"])
+            current = _extract_float(row, ["market_value", "current_value"])
 
-        if units <= 0:
-            continue
+            expense_ratio_raw = _extract_float(
+                row, ["expense_ratio", "ter", "expense_ratio_%"], "0"
+            )
+            expense_ratio = expense_ratio_raw if expense_ratio_raw > 0 else None
 
-        try:
-            avg_nav = float(row.get("average_cost", 0) or 0)
-            isin = row.get("isin", "")
-            scheme_name = row.get("scheme_name", "Unknown Fund")
+            if units == 0 and invested == 0:
+                continue
+
+            live_nav = enrich_holding_nav(isin, scheme, avg_nav)
+            current_value = current if current > 0 else units * live_nav
 
             holdings.append(
                 MFHolding(
-                    scheme_name=scheme_name,
+                    scheme_name=scheme,
                     isin=isin,
                     units=units,
                     avg_nav=avg_nav,
-                    category=_infer_category(scheme_name),
-                    **_enrich(isin, scheme_name, units, avg_nav),
+                    current_nav=live_nav,
+                    invested_amount=invested,
+                    current_value=current_value,
+                    category=_infer_category(scheme),
+                    expense_ratio=expense_ratio,
                 )
             )
-        except Exception as e:
-            logger.warning("Skipping malformed CSV row: %s — %s", row, e)
-
+        except (ValueError, KeyError):
+            continue
     return holdings
 
 
@@ -171,7 +212,7 @@ def parse_cams_pdf(content: bytes) -> str:
         return ""
 
 
-def _parse_pdf_holdings(text: str) -> list[MFHolding]:
+def parse_pdf_holdings(text: str) -> list[MFHolding]:
     """
     Heuristic extraction of holdings from CAMS PDF text.
     Looks for lines containing a valid ISIN and at least 3 numeric values.
@@ -207,31 +248,6 @@ def _parse_pdf_holdings(text: str) -> list[MFHolding]:
                 )
             )
     return holdings
-
-
-# Category inference
-def _infer_category(scheme_name: str) -> str:
-    name = scheme_name.lower()
-    if any(k in name for k in ["liquid", "overnight", "money market"]):
-        return "Liquid"
-    if any(k in name for k in ["debt", "bond", "gilt", "credit", "short duration", "low duration"]):
-        return "Debt"
-    if any(k in name for k in ["hybrid", "balanced", "asset alloc"]):
-        return "Hybrid"
-    if any(k in name for k in ["index", "nifty", "sensex", "etf"]):
-        return "Index/ETF"
-    if any(k in name for k in ["small cap", "smallcap"]):
-        return "Small Cap"
-    if any(k in name for k in ["mid cap", "midcap"]):
-        return "Mid Cap"
-    if any(k in name for k in [
-        "large cap", "largecap", "bluechip", "top 100", "top100",
-        "frontline", "focused 30", "top 200",
-    ]):
-        return "Large Cap"
-    if "flexi" in name or "multi cap" in name:
-        return "Flexi/Multi Cap"
-    return "Equity"
 
 
 # Overlap detection

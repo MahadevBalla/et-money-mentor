@@ -11,10 +11,10 @@ import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from finance.mf_xray import (
-    _csv_rows_to_holdings,
     _infer_category,
     analyse_portfolio,
     compute_xirr,
+    csv_rows_to_holdings,
     detect_overlap,
     generate_rebalancing_suggestions,
     parse_cams_csv,
@@ -129,7 +129,7 @@ class TestParseCAMSCSV:
         """Header-only CSV produces no holdings."""
         csv_bytes = b"scheme_name,isin,units\n"
         rows = parse_cams_csv(csv_bytes)
-        assert _csv_rows_to_holdings(rows) == []
+        assert csv_rows_to_holdings(rows) == []
 
     def test_zero_unit_rows_are_skipped(self):
         """
@@ -140,7 +140,7 @@ class TestParseCAMSCSV:
             b"scheme_name,isin,closing_unit_balance,average_cost\nMy Fund,INF001A01234,0.0,100.0\n"
         )
         rows = parse_cams_csv(csv_bytes)
-        assert len(_csv_rows_to_holdings(rows)) == 0
+        assert len(csv_rows_to_holdings(rows)) == 0
 
     def test_valid_row_produces_holding(self):
         csv_bytes = (
@@ -148,10 +148,12 @@ class TestParseCAMSCSV:
             b"UTI Nifty 50 Index Fund,INF789F01234,50.0,200.0\n"
         )
         rows = parse_cams_csv(csv_bytes)
-        holdings = _csv_rows_to_holdings(rows)
+        holdings = csv_rows_to_holdings(rows)
         assert len(holdings) == 1
         assert holdings[0].units == pytest.approx(50.0)
-        assert holdings[0].invested_amount == pytest.approx(50.0 * 200.0)
+        assert holdings[0].avg_nav == pytest.approx(200.0)
+        assert holdings[0].current_nav == pytest.approx(200.0)
+        assert holdings[0].current_value == pytest.approx(50.0 * 200.0)
 
     def test_mixed_zero_and_nonzero_rows(self):
         """Only non-zero rows should be returned."""
@@ -162,7 +164,7 @@ class TestParseCAMSCSV:
             b"Fund C,INF003,75.5,180.0\n"
         )
         rows = parse_cams_csv(csv_bytes)
-        holdings = _csv_rows_to_holdings(rows)
+        holdings = csv_rows_to_holdings(rows)
         assert len(holdings) == 2
         assert all(h.units > 0 for h in holdings)
 
