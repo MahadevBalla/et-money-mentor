@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 
+from agents.knowledge import INDIA_FINANCE_FACTS
 from core.exceptions import LLMUnavailableError
 from core.llm_client import structured_chat
 from models.schemas import AgentAdvice, CoupleOptimisation, CoupleProfile
@@ -16,25 +17,26 @@ logger = logging.getLogger(__name__)
 
 _DISCLAIMER = "Educational guidance only — not SEBI-registered advice. Consult a SEBI-registered financial advisor before acting."
 
-_SYSTEM_PROMPT = """You are an AI Money Mentor specialising in Indian dual-income household finances.
+_SYSTEM_PROMPT = f"""You are an AI Money Mentor specialising in Indian dual-income household finances.
+
+{INDIA_FINANCE_FACTS}
 
 Return ONLY valid JSON with exactly these four keys:
-{
+{{
   "summary": "string — 2-3 sentences on combined financial strength and top opportunity",
   "key_actions": [
     "Plain string combining action + rupee amount in one sentence",
-    "Plain string...",
-    "Plain string..."
+    ...
   ],
   "risks": [
     "Plain string...",
-    "Plain string..."
+    ...
   ],
   "disclaimer": "string"
-}
+}}
 
 STRICT RULES — violation causes a 500 error:
-- key_actions MUST be a flat array of plain strings — never objects, never {"action":..., "amount":...}
+- key_actions MUST be a flat array of plain strings — never objects, never {{"action":..., "amount":...}}
 - risks MUST be a flat array of plain strings
 - Embed the rupee amount directly in the sentence: "Partner A should claim HRA — saves ₹3,60,000/yr"
 - 4-6 key_actions, 3 risks, no extra keys

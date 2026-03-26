@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 
+from agents.knowledge import INDIA_FINANCE_FACTS
 from core.exceptions import LLMUnavailableError
 from core.llm_client import structured_chat
 from models.schemas import AgentAdvice, MFXRayResult
@@ -50,7 +51,7 @@ Respond with JSON keys: summary, key_actions, risks, disclaimer
     messages = [
         {
             "role": "system",
-            "content": "You are an AI Money Mentor specialising in Indian mutual funds. Reply only with valid JSON.",
+            "content": f"You are an AI Money Mentor specialising in Indian mutual funds.\n\n{INDIA_FINANCE_FACTS}\n\nReply only with valid JSON.",
         },
         {"role": "user", "content": prompt},
     ]

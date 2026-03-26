@@ -252,7 +252,8 @@ async def revoke_all_user_tokens(user_id: str) -> int:
     async with AsyncSessionLocal() as db:
         result = await db.execute(
             select(RefreshToken).where(
-                RefreshToken.user_id == user_id, RefreshToken.is_revoked == False
+                RefreshToken.user_id == user_id,
+                RefreshToken.is_revoked.is_(False)
             )
         )
         tokens = result.scalars().all()
