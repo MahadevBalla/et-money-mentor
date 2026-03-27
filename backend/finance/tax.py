@@ -63,11 +63,22 @@ def _total_tax(
 def _old_taxable(
     gross: float, deductions: TaxDeductions, constants: IndiaFiscalYearConstants
 ) -> float:
+    # Respect senior citizen limits for 80D
+    d80d_self_cap = (
+        constants.sec_80d_self_senior_limit
+        if deductions.section_80d_self_is_senior
+        else constants.sec_80d_self_limit
+    )
+    d80d_parents_cap = (
+        constants.sec_80d_parents_senior_limit
+        if deductions.section_80d_parents_are_senior
+        else constants.sec_80d_parents_limit
+    )
     total = (
         constants.standard_deduction_old
         + min(deductions.section_80c, constants.sec_80c_limit)
-        + min(deductions.section_80d_self, constants.sec_80d_self_limit)
-        + min(deductions.section_80d_parents, constants.sec_80d_parents_limit)
+        + min(deductions.section_80d_self, d80d_self_cap)
+        + min(deductions.section_80d_parents, d80d_parents_cap)
         + min(deductions.nps_80ccd_1b, constants.nps_80ccd_1b_limit)
         + deductions.hra_claimed
         + min(deductions.home_loan_interest, constants.home_loan_interest_limit)
@@ -105,14 +116,39 @@ def analyse_missing_deductions(
         )
         potential += unused_80c
 
-    unused_80d_self = constants.sec_80d_self_limit - deductions.section_80d_self
+    # Respect senior citizen 80D limits
+    d80d_self_cap = (
+        constants.sec_80d_self_senior_limit
+        if deductions.section_80d_self_is_senior
+        else constants.sec_80d_self_limit
+    )
+    unused_80d_self = d80d_self_cap - deductions.section_80d_self
     if unused_80d_self > 0:
-        missing.append(f"Section 80D (self/family health): ₹{unused_80d_self:,.0f} unused")
+        limit_label = (
+            f"₹{d80d_self_cap:,} (senior)"
+            if deductions.section_80d_self_is_senior
+            else f"₹{d80d_self_cap:,}"
+        )
+        missing.append(
+            f"Section 80D (self/family health): ₹{unused_80d_self:,.0f} unused (cap {limit_label})"
+        )
         potential += unused_80d_self
 
-    unused_80d_parents = constants.sec_80d_parents_limit - deductions.section_80d_parents
+    d80d_parents_cap = (
+        constants.sec_80d_parents_senior_limit
+        if deductions.section_80d_parents_are_senior
+        else constants.sec_80d_parents_limit
+    )
+    unused_80d_parents = d80d_parents_cap - deductions.section_80d_parents
     if unused_80d_parents > 0:
-        missing.append(f"Section 80D (parents' health): ₹{unused_80d_parents:,.0f} unused")
+        limit_label = (
+            f"₹{d80d_parents_cap:,} (senior parents)"
+            if deductions.section_80d_parents_are_senior
+            else f"₹{d80d_parents_cap:,}"
+        )
+        missing.append(
+            f"Section 80D (parents' health): ₹{unused_80d_parents:,.0f} unused (cap {limit_label})"
+        )
         potential += unused_80d_parents
 
     unused_nps = constants.nps_80ccd_1b_limit - deductions.nps_80ccd_1b
