@@ -1,190 +1,399 @@
+// frontend/src/components/tax/tax-page.tsx
 "use client";
 
 import { useState } from "react";
-import { AppShell } from "@/components/layout/app-shell";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { LoadingState } from "@/components/ui/loading-state";
-import { ErrorState } from "@/components/ui/error-state";
+import {
+  ChevronRight, ChevronLeft, CheckCircle2,
+  Loader2, ArrowRight, Flame, TrendingUp,
+} from "lucide-react";
+import { AppShell }    from "@/components/layout/app-shell";
+import { Button }      from "@/components/ui/button";
 import { AdvicePanel } from "@/components/ui/advice-panel";
-import { getTaxAnalysis, type TaxResponse } from "@/lib/finance";
-import { TrendingDown, AlertCircle } from "lucide-react";
+import { cn }          from "@/lib/utils";
+import { getTaxAnalysis } from "@/lib/finance";
+import {
+  DEFAULT_TAX_FORM,
+  FY_LABEL,
+  type TaxFormState,
+  type TaxApiResponse,
+  type TaxPayload,
+} from "@/lib/tax-types";
+import { StepIncome }       from "./steps/step-income";
+import { StepDeductions }   from "./steps/step-deductions";
+import { TaxVerdict }       from "./results/tax-verdict";
+import { TaxBar }           from "./results/tax-bar";
+import { MissedDeductions } from "./results/missed-deductions";
+import { SlabBreakdown }    from "./results/slab-breakdown";
 
-export function TaxPage() {
-  const [form, setForm] = useState({
-    age: "",
-    annual_income: "",
-    ppf: "",
-    elss: "",
-    health_insurance_self: "",
-    nps_contribution: "",
-    home_loan_interest: "",
+// ─── Steps ────────────────────────────────────────────────────────────────────
+const STEPS = [
+  { id: 1, label: "Income",     desc: "Your earnings"    },
+  { id: 2, label: "Deductions", desc: "Tax-saving items" },
+];
+
+// ─── Validation ───────────────────────────────────────────────────────────────
+function validate(step: number, form: TaxFormState): string | null {
+  if (step === 1) {
+    const age = Number(form.age);
+    if (!form.age || age < 18 || age > 80)
+      return "Please enter a valid age between 18 and 80.";
+    if (!form.city || form.city.trim().length < 2)
+      return "Please enter your city.";
+    const income = Number(form.annual_gross_income);
+    if (!form.annual_gross_income || income <= 0)
+      return "Please enter your annual gross income.";
+    if (income < 1_00_000)
+      return "Annual income seems too low. Did you enter monthly instead of annual?";
+  }
+  return null;
+}
+
+// ─── Payload builder ──────────────────────────────────────────────────────────
+function buildPayload(form: TaxFormState): TaxPayload {
+  const annualGross = Number(form.annual_gross_income);
+  const num = (v: string) => Number(v) || 0;
+
+  return {
+    age:                  Number(form.age),
+    city:                 form.city.trim(),
+    employment_type:      form.employment_type,
+    dependents:           0,
+    monthly_gross_income: Math.round(annualGross / 12),
+    monthly_expenses:     0,
+    emergency_fund:       0,
+    risk_profile:         "moderate",
+    retirement_age:       Math.max(Number(form.age) + 1, 60),
+    assets: { equity: 0, debt: 0, gold: 0, real_estate: 0, cash: 0, ppf_epf: 0, other: 0 },
+    debts: [],
+    insurance: { has_term_life: false, term_cover: 0, has_health: false, health_cover: 0, has_critical_illness: false },
+    tax_deductions: {
+      section_80c:                  Math.min(num(form.section_80c),          1_50_000),
+      section_80d_self:             Math.min(num(form.section_80d_self),     form.section_80d_self_is_senior ? 50_000 : 25_000),
+      section_80d_self_is_senior:   form.section_80d_self_is_senior || Number(form.age) >= 60,
+      section_80d_parents:          Math.min(num(form.section_80d_parents),  form.section_80d_parents_are_senior ? 50_000 : 25_000),
+      section_80d_parents_are_senior: form.section_80d_parents_are_senior,
+      nps_80ccd_1b:                 Math.min(num(form.nps_80ccd_1b),         50_000),
+      hra_claimed:                  form.employment_type === "salaried" ? num(form.hra_claimed) : 0,
+      home_loan_interest:           Math.min(num(form.home_loan_interest),   2_00_000),
+      other_deductions:             num(form.other_deductions),
+    },
+    goals: [],
+  };
+}
+
+// ─── Stepper ──────────────────────────────────────────────────────────────────
+function StepperHeader({
+  current,
+  onStepClick,
+}: {
+  current: number;
+  onStepClick: (n: number) => void;
+}) {
+  return (
+    <div className="flex items-center gap-0 mb-8">
+      {STEPS.map((step, idx) => {
+        const isCompleted = current > step.id;
+        const isActive    = current === step.id;
+        return (
+          <div key={step.id} className="flex items-center flex-1 last:flex-none">
+            <button
+              type="button"
+              onClick={() => isCompleted && onStepClick(step.id)}
+              className={cn("flex flex-col items-center", isCompleted ? "cursor-pointer" : "cursor-default")}
+            >
+              <div className={cn(
+                "h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all",
+                isCompleted
+                  ? "bg-primary border-primary text-primary-foreground"
+                  : isActive
+                  ? "border-primary text-primary bg-background"
+                  : "border-border text-muted-foreground bg-background"
+              )}>
+                {isCompleted ? <CheckCircle2 className="h-4 w-4" /> : step.id}
+              </div>
+              <div className="mt-1.5 text-center hidden sm:block">
+                <p className={cn(
+                  "text-xs font-medium",
+                  isActive ? "text-primary" : isCompleted ? "text-foreground" : "text-muted-foreground"
+                )}>
+                  {step.label}
+                </p>
+                <p className="text-[10px] text-muted-foreground">{step.desc}</p>
+              </div>
+            </button>
+            {idx < STEPS.length - 1 && (
+              <div className={cn(
+                "h-0.5 flex-1 mx-2 transition-all",
+                current > step.id ? "bg-primary" : "bg-border"
+              )} />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Loading overlay ──────────────────────────────────────────────────────────
+const LOADING_STAGES = [
+  "Validating your income profile...",
+  "Computing Old vs New regime tax...",
+  "Detecting unused deductions...",
+  "Generating AI tax advice...",
+];
+
+function LoadingOverlay() {
+  const [stageIdx, setStageIdx] = useState(0);
+
+  useState(() => {
+    const timers = LOADING_STAGES.map((_, i) =>
+      i > 0 ? setTimeout(() => setStageIdx(i), i * 1200) : null
+    ).filter(Boolean);
+    return () => timers.forEach((t) => t && clearTimeout(t));
   });
-  const [result, setResult] = useState<TaxResponse | null>(null);
+
+  return (
+    <div className="flex flex-col items-center justify-center py-20 gap-6">
+      <div className="relative">
+        <div className="h-16 w-16 rounded-full border-2 border-primary/20 animate-ping absolute" />
+        <div className="h-16 w-16 rounded-full border-2 border-primary/40 flex items-center justify-center relative">
+          <Loader2 className="h-7 w-7 text-primary animate-spin" />
+        </div>
+      </div>
+      <div className="space-y-2 text-center">
+        {LOADING_STAGES.map((label, i) => (
+          <div key={i} className={cn("flex items-center gap-2 text-sm", i > stageIdx && "opacity-30")}>
+            {i < stageIdx
+              ? <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
+              : i === stageIdx
+              ? <Loader2 className="h-4 w-4 text-primary animate-spin flex-shrink-0" />
+              : <div className="h-4 w-4 rounded-full border border-border flex-shrink-0" />
+            }
+            <span className={cn("text-sm", i === stageIdx ? "text-foreground font-medium" : "text-muted-foreground")}>
+              {label}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+export function TaxPage() {
+  const [step,    setStep   ] = useState(1);
+  const [form,    setForm   ] = useState<TaxFormState>(DEFAULT_TAX_FORM);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error,   setError  ] = useState("");
+  const [result,  setResult ] = useState<TaxApiResponse | null>(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
-    setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+  function patch(p: Partial<TaxFormState>) {
+    setForm((f) => ({ ...f, ...p }));
+  }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  function goNext() {
+    const err = validate(step, form);
+    if (err) { setError(err); return; }
     setError("");
-    setResult(null);
+    if (step < 2) { setStep(2); return; }
+    handleSubmit();
+  }
+
+  function goBack() {
+    setError("");
+    setStep(1);
+  }
+
+  async function handleSubmit(skipDeductions = false) {
+    setError("");
+    setLoading(true);
     try {
-      const payload = {
-        age: Number(form.age),
-        annual_income: Number(form.annual_income),
-        tax_investments: {
-          ppf: Number(form.ppf) || 0,
-          elss: Number(form.elss) || 0,
-        },
-        health_insurance: { self_premium: Number(form.health_insurance_self) || 0 },
-        nps_contribution: Number(form.nps_contribution) || 0,
-        home_loan: { interest_component: Number(form.home_loan_interest) || 0 },
-        regime_preference: "want_to_compare",
-      };
+      const payload = buildPayload(
+        skipDeductions
+          ? { ...form,
+              section_80c: "", section_80d_self: "", section_80d_parents: "",
+              nps_80ccd_1b: "", hra_claimed: "", home_loan_interest: "", other_deductions: "",
+            }
+          : form
+      );
       const res = await getTaxAnalysis(payload);
       setResult(res);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
+      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const reset = () => { setResult(null); setError(""); };
-  const fmt = (n: number) => `₹${n.toLocaleString("en-IN")}`;
+  function reset() {
+    setResult(null);
+    setForm(DEFAULT_TAX_FORM);
+    setStep(1);
+    setError("");
+  }
+
+  const stepTitles = ["Income & Profile", "Tax Deductions"];
 
   return (
     <AppShell>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Tax wizard</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Old vs New regime comparison with missing deduction detection — FY 2025-26.
-          </p>
-        </div>
-
-        {!result && !loading && (
-          <form onSubmit={handleSubmit} className="bg-card border border-border rounded-xl p-6 space-y-5">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="age">Age</Label>
-                <Input id="age" name="age" type="number" placeholder="32" value={form.age} onChange={handleChange} required />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="annual_income">Annual income (₹)</Label>
-                <Input id="annual_income" name="annual_income" type="number" placeholder="1200000" value={form.annual_income} onChange={handleChange} required />
-              </div>
-            </div>
-
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Deductions (optional — leave blank if none)</p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="ppf">PPF / 80C investments (₹)</Label>
-                <Input id="ppf" name="ppf" type="number" placeholder="80000" value={form.ppf} onChange={handleChange} />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="elss">ELSS mutual funds (₹)</Label>
-                <Input id="elss" name="elss" type="number" placeholder="50000" value={form.elss} onChange={handleChange} />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="health_insurance_self">Health insurance premium (₹)</Label>
-                <Input id="health_insurance_self" name="health_insurance_self" type="number" placeholder="15000" value={form.health_insurance_self} onChange={handleChange} />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="nps_contribution">NPS contribution (₹)</Label>
-                <Input id="nps_contribution" name="nps_contribution" type="number" placeholder="30000" value={form.nps_contribution} onChange={handleChange} />
-              </div>
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label htmlFor="home_loan_interest">Home loan interest (₹)</Label>
-                <Input id="home_loan_interest" name="home_loan_interest" type="number" placeholder="180000" value={form.home_loan_interest} onChange={handleChange} />
-              </div>
-            </div>
-
-            <Button type="submit" className="w-full" size="lg">Compare regimes</Button>
-          </form>
+      <div className="space-y-6 max-w-2xl mx-auto">
+        {/* Page header */}
+        {!result && (
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Tax Wizard</h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              Old vs New regime comparison with missing deduction detection · {FY_LABEL}
+            </p>
+          </div>
         )}
 
-        {loading && <LoadingState message="Optimising your tax position..." />}
-        {error && <ErrorState message={error} onRetry={reset} />}
-
+        {/* ── Results ── */}
         {result && (
           <div className="space-y-6">
-            {/* Regime comparison */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {[
-                {
-                  label: "Old regime",
-                  tax: result.result.old_regime_tax,
-                  rate: result.result.effective_rate_old,
-                  recommended: result.result.recommended_regime === "old",
-                },
-                {
-                  label: "New regime",
-                  tax: result.result.new_regime_tax,
-                  rate: result.result.effective_rate_new,
-                  recommended: result.result.recommended_regime === "new",
-                },
-              ].map((r) => (
-                <div
-                  key={r.label}
-                  className={`rounded-xl p-5 border-2 ${
-                    r.recommended
-                      ? "border-primary bg-primary/5"
-                      : "border-border bg-card"
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="font-semibold">{r.label}</p>
-                    {r.recommended && (
-                      <span className="text-xs font-semibold bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
-                        Recommended
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-2xl font-bold">{fmt(r.tax)}</p>
-                  <p className="text-sm text-muted-foreground mt-1">Effective rate: {r.rate.toFixed(2)}%</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Savings banner */}
-            <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-xl">
-              <TrendingDown className="h-5 w-5 text-green-600 flex-shrink-0" />
-              <p className="text-sm font-medium text-green-800 dark:text-green-300">
-                You save {fmt(result.result.savings_by_switching)} by choosing the {result.result.recommended_regime} regime.
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">Your Tax Analysis</h1>
+              <p className="text-muted-foreground text-sm mt-1">
+                {FY_LABEL} · Based on income ₹{(result.result.gross_income / 1e5).toFixed(1)}L
               </p>
             </div>
 
-            {/* Missing deductions */}
-            {result.result.missing_deductions.length > 0 && (
-              <div className="bg-card border border-border rounded-xl p-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <AlertCircle className="h-4 w-4 text-amber-500" />
-                  <h2 className="text-sm font-semibold">Unused deductions — {fmt(result.result.deduction_potential)} potential savings</h2>
-                </div>
-                <ul className="space-y-2">
-                  {result.result.missing_deductions.map((d, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-amber-500 flex-shrink-0" />
-                      {d}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            {/* Block 1: Verdict hero */}
+            <TaxVerdict result={result.result} />
 
+            {/* Block 2: Visual bar */}
+            <TaxBar result={result.result} />
+
+            {/* Block 3: Missed deductions */}
+            <MissedDeductions result={result.result} />
+
+            {/* Block 4: Slab breakdown */}
+            <SlabBreakdown
+              result={result.result}
+              deductions={result.profile.tax_deductions}
+            />
+
+            {/* Block 5: AI Advice */}
             <div>
-              <h2 className="text-base font-semibold mb-3">AI recommendations</h2>
+              <h2 className="text-base font-semibold mb-3">AI Recommendations</h2>
               <AdvicePanel advice={result.advice} />
             </div>
 
-            <Button variant="outline" onClick={reset} className="w-full">Recalculate</Button>
+            {/* Cross-feature CTAs */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="flex items-center justify-between bg-muted rounded-xl px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Flame className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium">Plan your FIRE path</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      Lower tax = higher investable surplus
+                    </p>
+                  </div>
+                </div>
+                <a href="/fire">
+                  <Button variant="outline" size="sm" className="gap-1 flex-shrink-0 text-xs">
+                    FIRE <ArrowRight className="h-3 w-3" />
+                  </Button>
+                </a>
+              </div>
+              <div className="flex items-center justify-between bg-muted rounded-xl px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <TrendingUp className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium">Check financial health</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      Full 6-dimension diagnosis
+                    </p>
+                  </div>
+                </div>
+                <a href="/health-score">
+                  <Button variant="outline" size="sm" className="gap-1 flex-shrink-0 text-xs">
+                    Health <ArrowRight className="h-3 w-3" />
+                  </Button>
+                </a>
+              </div>
+            </div>
+
+            <Button variant="outline" onClick={reset} className="w-full" size="lg">
+              Recalculate with new data
+            </Button>
+          </div>
+        )}
+
+        {/* ── Loading ── */}
+        {loading && !result && (
+          <div className="bg-card border border-border rounded-xl px-8">
+            <LoadingOverlay />
+          </div>
+        )}
+
+        {/* ── Wizard ── */}
+        {!result && !loading && (
+          <div className="bg-card border border-border rounded-xl p-6">
+            <StepperHeader
+              current={step}
+              onStepClick={(n) => { setStep(n); setError(""); }}
+            />
+
+            <div className="mb-6">
+              <h2 className="text-base font-semibold">
+                Step {step}: {stepTitles[step - 1]}
+                {step === 2 && (
+                  <span className="ml-2 text-xs font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                    Optional
+                  </span>
+                )}
+              </h2>
+            </div>
+
+            {step === 1 && <StepIncome     form={form} onChange={patch} />}
+            {step === 2 && <StepDeductions form={form} onChange={patch} />}
+
+            {error && (
+              <div className="mt-4 px-4 py-3 bg-destructive/10 border border-destructive/30 rounded-xl text-sm text-destructive">
+                {error}
+              </div>
+            )}
+
+            <div className="flex items-center justify-between mt-6 pt-4 border-t border-border">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={goBack}
+                disabled={step === 1}
+                className="gap-1.5"
+              >
+                <ChevronLeft className="h-4 w-4" /> Back
+              </Button>
+
+              <div className="flex items-center gap-3">
+                {step === 2 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => { setError(""); handleSubmit(true); }}
+                    className="text-muted-foreground"
+                  >
+                    Skip & Compare
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  onClick={goNext}
+                  size={step === 2 ? "lg" : "default"}
+                  className="gap-1.5"
+                >
+                  {step === 2
+                    ? "Compare Tax Regimes"
+                    : <><span>Next</span> <ChevronRight className="h-4 w-4" /></>}
+                </Button>
+              </div>
+            </div>
           </div>
         )}
       </div>

@@ -84,7 +84,7 @@ export function AppShell({ children }: AppShellProps) {
       <aside
         className={cn(
           "fixed top-0 left-0 h-full w-60 bg-card border-r border-border z-30 flex flex-col transition-transform duration-200",
-          "lg:translate-x-0 lg:static lg:z-auto",
+          "lg:translate-x-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -158,7 +158,7 @@ export function AppShell({ children }: AppShellProps) {
       </aside>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 lg:ml-60">
         {/* Top bar (mobile) */}
         <header className="flex items-center h-16 px-4 border-b border-border bg-card lg:hidden flex-shrink-0">
           <button

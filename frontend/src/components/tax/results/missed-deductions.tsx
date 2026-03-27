@@ -1,0 +1,106 @@
+// frontend/src/components/tax/results/missed-deductions.tsx
+
+import { AlertCircle, IndianRupee } from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { TaxResult } from "@/lib/tax-types";
+
+interface Props { result: TaxResult; }
+
+// Map section keywords from engine strings to action hints
+function getActionHint(text: string): string {
+  const t = text.toLowerCase();
+  if (t.includes("80c"))     return "Invest in PPF, ELSS, EPF top-up, or LIC premium";
+  if (t.includes("80d") && t.includes("self")) return "Pay health insurance premium for yourself & family";
+  if (t.includes("80d") && t.includes("parent")) return "Pay parents' health insurance premium";
+  if (t.includes("nps"))     return "Open NPS account — best additional deduction available";
+  if (t.includes("hra"))     return "Submit rent receipts to your employer or claim at ITR filing";
+  if (t.includes("24") || t.includes("home loan")) return "Enter interest certificate from your lender";
+  return "Consult your CA for this deduction";
+}
+
+function extractUnusedAmount(text: string): number | null {
+  const match = text.match(/₹([\d,]+)/);
+  if (!match) return null;
+  return parseInt(match[1].replace(/,/g, ""), 10);
+}
+
+export function MissedDeductions({ result }: Props) {
+  if (!result.missing_deductions.length) return null;
+
+  const fmt = (n: number) => `₹${n.toLocaleString("en-IN")}`;
+  const potentialTaxSaved = result.recommended_regime === "old"
+    ? Math.round(result.deduction_potential * 0.30 * 1.04) // rough: 30% bracket + cess
+    : 0;
+
+  return (
+    <div className="bg-card border border-amber-200 dark:border-amber-800 rounded-xl overflow-hidden">
+      {/* Header */}
+      <div className="bg-amber-50 dark:bg-amber-950/30 px-5 py-4 flex items-start gap-3">
+        <div className="h-9 w-9 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center flex-shrink-0 mt-0.5">
+          <IndianRupee className="h-4 w-4 text-amber-600" />
+        </div>
+        <div>
+          <p className="text-sm font-bold text-amber-800 dark:text-amber-200">
+            Money left on the table — {fmt(result.deduction_potential)} in unused deductions
+          </p>
+          {potentialTaxSaved > 0 && (
+            <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
+              Claiming these could save approximately {fmt(potentialTaxSaved)} in additional tax
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Items */}
+      <div className="divide-y divide-border">
+        {result.missing_deductions.map((text, i) => {
+          const unusedAmt = extractUnusedAmount(text);
+          const actionHint = getActionHint(text);
+          const isHighPriority = unusedAmt !== null && unusedAmt >= 25_000;
+
+          return (
+            <div key={i} className="px-5 py-4 flex items-start gap-3">
+              <div className={cn(
+                "h-6 w-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5",
+                isHighPriority
+                  ? "bg-amber-100 dark:bg-amber-900/40"
+                  : "bg-muted"
+              )}>
+                <AlertCircle className={cn(
+                  "h-3.5 w-3.5",
+                  isHighPriority ? "text-amber-600" : "text-muted-foreground"
+                )} />
+              </div>
+              <div className="space-y-1 min-w-0">
+                <p className={cn(
+                  "text-sm font-medium",
+                  isHighPriority ? "text-amber-800 dark:text-amber-200" : "text-foreground"
+                )}>
+                  {text}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  → {actionHint}
+                </p>
+              </div>
+              {isHighPriority && unusedAmt && (
+                <div className="flex-shrink-0 text-right ml-auto">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
+                    High Priority
+                  </span>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Footer note */}
+      <div className="px-5 py-3 bg-muted/50 border-t border-border">
+        <p className="text-xs text-muted-foreground">
+          💡 These deductions only reduce tax under the <strong className="text-foreground">Old Regime</strong>.
+          If the New Regime is already recommended, claiming deductions may further increase Old Regime savings — run a recalculation after investing.
+        </p>
+      </div>
+    </div>
+  );
+}

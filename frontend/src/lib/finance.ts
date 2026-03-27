@@ -4,7 +4,7 @@
 import { api } from "@/lib/api";
 import type { HealthScoreApiResponse, HealthScorePayload } from "@/lib/health-score-types";
 import type { FIREPayload, FIREApiResponse } from "@/lib/fire-types";
-
+import type { TaxPayload, TaxApiResponse } from "@/lib/tax-types";
 
 // ─── Shared types ────────────────────────────────────────────────────────────
 
@@ -104,8 +104,8 @@ export interface TaxResponse {
   decision_log: unknown[];
 }
 
-export async function getTaxAnalysis(data: Record<string, unknown>): Promise<TaxResponse> {
-  return api.post<TaxResponse>("/api/tax-wizard", data);
+export async function getTaxAnalysis(data: TaxPayload): Promise<TaxApiResponse> {
+  return api.post<TaxApiResponse>("/api/tax-wizard", data);
 }
 
 // ─── Life Event ───────────────────────────────────────────────────────────────
