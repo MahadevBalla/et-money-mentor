@@ -19,7 +19,7 @@ const EVENT_ORDER: LifeEventType[] = [
   "new_baby", "job_loss", "inheritance",
 ];
 
-export function StepEventPicker({ form, onChange }: Props) {
+export function StepEventPicker({ form, onChange }: Readonly<Props>) {
   return (
     <div className="space-y-5">
       <div>
@@ -34,6 +34,7 @@ export function StepEventPicker({ form, onChange }: Props) {
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {EVENT_ORDER.map((type) => {
           const meta = EVENT_META[type];
+          const Icon = meta.icon;
           const isSelected = form.event_type === type;
 
           return (
@@ -49,33 +50,30 @@ export function StepEventPicker({ form, onChange }: Props) {
                   : "border-border bg-card hover:border-primary/30"
               )}
             >
-              {/* Selected checkmark */}
               {isSelected && (
                 <div className="absolute top-2.5 right-2.5">
                   <CheckCircle2 className="h-4 w-4 text-primary" />
                 </div>
               )}
 
-              {/* Emoji */}
-              <span className="text-2xl mb-2 leading-none">{meta.emoji}</span>
-
-              {/* Label */}
-              <p className={cn(
-                "text-sm font-semibold leading-tight",
-                isSelected ? "text-foreground" : "text-foreground"
+              {/* Icon replaces emoji */}
+              <div className={cn(
+                "h-9 w-9 rounded-lg flex items-center justify-center mb-2",
+                isSelected ? "bg-white/60 dark:bg-black/20" : "bg-muted"
               )}>
+                <Icon className={cn(
+                  "h-4 w-4",
+                  isSelected ? "text-foreground" : "text-muted-foreground"
+                )} />
+              </div>
+
+              <p className="text-sm font-semibold leading-tight text-foreground">
                 {meta.label}
               </p>
-
-              {/* Tagline */}
-              <p className={cn(
-                "text-[11px] mt-1 leading-tight",
-                isSelected ? "text-muted-foreground" : "text-muted-foreground opacity-80"
-              )}>
+              <p className="text-[11px] mt-1 leading-tight text-muted-foreground opacity-80">
                 &ldquo;{meta.tagline}&rdquo;
               </p>
 
-              {/* Crisis badge */}
               {meta.isCrisis && (
                 <span className="mt-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300">
                   URGENT
@@ -87,24 +85,24 @@ export function StepEventPicker({ form, onChange }: Props) {
       </div>
 
       {/* Description of selected event */}
-      {form.event_type && (
-        <div className={cn(
-          "flex items-start gap-3 px-4 py-3 rounded-xl border transition-all",
-          EVENT_META[form.event_type].colorClass.replace("border-", "border-").replace("bg-", "bg-")
-        )}>
-          <span className="text-xl flex-shrink-0">
-            {EVENT_META[form.event_type].emoji}
-          </span>
-          <div>
-            <p className="text-xs font-semibold text-foreground">
-              {EVENT_META[form.event_type].label}
-            </p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {EVENT_META[form.event_type].description}
-            </p>
+      {form.event_type && (() => {
+        const meta = EVENT_META[form.event_type];
+        const Icon = meta.icon;
+        return (
+          <div className={cn(
+            "flex items-start gap-3 px-4 py-3 rounded-xl border transition-all",
+            meta.colorClass
+          )}>
+            <div className="h-8 w-8 rounded-lg bg-white/60 dark:bg-black/20 flex items-center justify-center shrink-0 mt-0.5">
+              <Icon className="h-4 w-4 text-foreground" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-foreground">{meta.label}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{meta.description}</p>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

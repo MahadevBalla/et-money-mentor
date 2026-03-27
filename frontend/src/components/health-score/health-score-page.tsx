@@ -73,10 +73,10 @@ function buildPayload(form: WizardFormState): HealthScorePayload {
 function StepperHeader({
   current,
   onStepClick,
-}: {
+}: Readonly<{
   current: number;
   onStepClick: (n: number) => void;
-}) {
+}>) {
   return (
     <div className="flex items-center gap-0 mb-8">
       {STEPS.map((step, idx) => {
@@ -156,7 +156,7 @@ function LoadingOverlay() {
         {LOADING_STAGES.map((stage, i) => (
           <div key={i} className={cn("flex items-center gap-2 text-sm transition-all", i > stageIdx ? "opacity-30" : "")}>
             {i < stageIdx
-              ? <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+              ? <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
               : i === stageIdx
               ? <Loader2 className="h-4 w-4 text-primary animate-spin shrink-0" />
               : <div className="h-4 w-4 rounded-full border border-border shrink-0" />}
@@ -176,10 +176,10 @@ function LoadingOverlay() {
 function ReviewCard({
   form,
   onEdit,
-}: {
+}: Readonly<{
   form: WizardFormState;
   onEdit: (step: number) => void;
-}) {
+}>) {
   const income = Number(form.monthly_gross_income);
   const totalAssets = Object.values(form.assets).reduce((s, v) => s + v, 0);
   const totalEMI = form.debts.reduce((s, d) => s + d.emi, 0);
@@ -398,13 +398,13 @@ export function HealthScorePage() {
                   </Button>
                 )}
 
-                {!showReview ? (
-                  <Button type="button" onClick={goNext} className="gap-1.5">
-                    {step === 4 ? "Review" : "Next"} <ChevronRight className="h-4 w-4" />
-                  </Button>
-                ) : (
+                {showReview ? (
                   <Button type="button" onClick={handleSubmit} size="lg" className="px-8 gap-1.5">
                     Calculate My Score <ChevronRight className="h-4 w-4" />
+                  </Button>
+                ) : (
+                  <Button type="button" onClick={goNext} className="gap-1.5">
+                    {step === 4 ? "Review" : "Next"} <ChevronRight className="h-4 w-4" />
                   </Button>
                 )}
               </div>

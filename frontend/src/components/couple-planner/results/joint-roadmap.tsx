@@ -7,7 +7,7 @@ interface Props {
   nameB: string;
 }
 
-export function JointRoadmap({ recommendations, nameA, nameB }: Props) {
+export function JointRoadmap({ recommendations, nameA, nameB }: Readonly<Props>) {
   if (!recommendations.length) return null;
 
   const personalise = (s: string) =>
@@ -30,8 +30,8 @@ export function JointRoadmap({ recommendations, nameA, nameB }: Props) {
           const isLast = i === recommendations.length - 1;
           return (
             <div key={i} className="flex gap-4 py-3">
-              <div className="flex flex-col items-center flex-shrink-0">
-                <div className="h-7 w-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold flex-shrink-0">
+              <div className="flex flex-col items-center shrink-0">
+                <div className="h-7 w-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
                   {i + 1}
                 </div>
                 {!isLast && (

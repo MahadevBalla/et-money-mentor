@@ -1,30 +1,36 @@
 // frontend/src/components/fire/results/goal-sip-table.tsx
-
-import type { SIPGoal, FIREResult } from "@/lib/fire-types";
+import { Home, GraduationCap, Gem, Plane, Shield, Pin, Target } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import type { SIPGoal } from "@/lib/fire-types";
 
 interface Props {
   sipGoals: SIPGoal[];
   fireSIP: number;
 }
 
-const GOAL_EMOJIS: Record<string, string> = {
-  house: "🏠", education: "🎓", marriage: "💍",
-  vacation: "✈️", emergency: "🛡", retirement: "🏖", custom: "📌",
+const GOAL_ICONS: Record<string, LucideIcon> = {
+  house: Home,
+  education: GraduationCap,
+  marriage: Gem,
+  vacation: Plane,
+  emergency: Shield,
+  retirement: Target,
+  custom: Pin,
 };
 
-export function GoalSIPTable({ sipGoals, fireSIP }: Props) {
+export function GoalSIPTable({ sipGoals, fireSIP }: Readonly<Props>) {
   if (!sipGoals || sipGoals.length === 0) return null;
 
-  const fmt    = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
-  const fmtCr  = (n: number) =>
+  const fmt = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
+  const fmtCr = (n: number) =>
     n >= 1e7
       ? `₹${(n / 1e7).toFixed(1)} Cr`
       : n >= 1e5
-      ? `₹${(n / 1e5).toFixed(1)} L`
-      : fmt(n);
+        ? `₹${(n / 1e5).toFixed(1)} L`
+        : fmt(n);
 
   const totalGoalSIP = sipGoals.reduce((s, g) => s + g.required_monthly_sip, 0);
-  const grandTotal   = fireSIP + totalGoalSIP;
+  const grandTotal = fireSIP + totalGoalSIP;
 
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden">
@@ -45,20 +51,18 @@ export function GoalSIPTable({ sipGoals, fireSIP }: Props) {
 
       {/* Goal rows */}
       {sipGoals.map((goal, i) => {
-        const emoji =
-          GOAL_EMOJIS[
-            goal.goal_label.toLowerCase().replace(/ /g, "_")
-          ] ?? "📌";
+        const key = goal.goal_label.toLowerCase().replace(/ /g, "_");
+        const Icon = GOAL_ICONS[key] ?? Pin;
         return (
           <div
             key={i}
             className="grid grid-cols-4 px-5 py-3 border-b border-border last:border-0 items-center hover:bg-muted/30 transition-colors"
           >
             <div className="flex items-center gap-2">
-              <span className="text-base">{emoji}</span>
-              <span className="text-sm font-medium truncate">
-                {goal.goal_label}
-              </span>
+              <div className="h-6 w-6 rounded-md bg-muted flex items-center justify-center shrink-0">
+                <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+              </div>
+              <span className="text-sm font-medium truncate">{goal.goal_label}</span>
             </div>
             <span className="text-sm text-right text-muted-foreground">
               {fmtCr(goal.target_amount)}
@@ -73,28 +77,21 @@ export function GoalSIPTable({ sipGoals, fireSIP }: Props) {
         );
       })}
 
-      {/* Totals section */}
+      {/* Totals */}
       <div className="bg-muted/40 border-t border-border">
         <div className="grid grid-cols-4 px-5 py-2.5 text-xs text-muted-foreground">
           <span>All goal SIPs</span>
-          <span />
-          <span />
-          <span className="text-right font-semibold">
-            {fmt(totalGoalSIP)}/mo
-          </span>
+          <span /><span />
+          <span className="text-right font-semibold">{fmt(totalGoalSIP)}/mo</span>
         </div>
         <div className="grid grid-cols-4 px-5 py-2.5 text-xs text-muted-foreground border-t border-border">
           <span>FIRE corpus SIP</span>
-          <span />
-          <span />
-          <span className="text-right font-semibold">
-            {fmt(fireSIP)}/mo
-          </span>
+          <span /><span />
+          <span className="text-right font-semibold">{fmt(fireSIP)}/mo</span>
         </div>
         <div className="grid grid-cols-4 px-5 py-3 bg-primary/5 border-t border-primary/20 text-sm font-bold text-primary">
           <span>Grand Total</span>
-          <span />
-          <span />
+          <span /><span />
           <span className="text-right">{fmt(grandTotal)}/mo</span>
         </div>
       </div>

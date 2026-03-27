@@ -109,10 +109,10 @@ function buildPayload(form: FIREFormState): FIREPayload {
 function StepperHeader({
   current,
   onStepClick,
-}: {
+}: Readonly<{
   current: number;
   onStepClick: (n: number) => void;
-}) {
+}>) {
   return (
     <div className="flex items-center gap-0 mb-8">
       {STEPS.map((step, idx) => {
@@ -206,11 +206,11 @@ function LoadingOverlay() {
             )}
           >
             {i < stageIdx ? (
-              <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
+              <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
             ) : i === stageIdx ? (
-              <Loader2 className="h-4 w-4 text-primary animate-spin flex-shrink-0" />
+              <Loader2 className="h-4 w-4 text-primary animate-spin shrink-0" />
             ) : (
-              <div className="h-4 w-4 rounded-full border border-border flex-shrink-0" />
+              <div className="h-4 w-4 rounded-full border border-border shrink-0" />
             )}
             <span
               className={cn(
@@ -376,7 +376,7 @@ export function FIREPage() {
                 </div>
               </div>
               <a href="/health-score">
-                <Button variant="outline" size="sm" className="gap-1.5 flex-shrink-0">
+                <Button variant="outline" size="sm" className="gap-1.5 shrink-0">
                   Health Score <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
               </a>

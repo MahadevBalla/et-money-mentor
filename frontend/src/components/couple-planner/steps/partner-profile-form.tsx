@@ -2,7 +2,8 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp, Briefcase, Laptop, Building2, } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Input }  from "@/components/ui/input";
 import { Label }  from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -16,18 +17,18 @@ interface Props {
   onChange: (patch: Partial<PartnerFormState>) => void;
 }
 
-const EMPLOYMENT_OPTS: { value: EmploymentType; icon: string; label: string }[] = [
-  { value: "salaried",      icon: "💼", label: "Salaried"      },
-  { value: "self_employed", icon: "🧑‍💻", label: "Self-Employed" },
-  { value: "business",      icon: "🏢", label: "Business"      },
+const EMPLOYMENT_OPTS: { value: EmploymentType; icon: LucideIcon; label: string }[] = [
+  { value: "salaried", icon: Briefcase, label: "Salaried" },
+  { value: "self_employed", icon: Laptop, label: "Self-Employed" },
+  { value: "business", icon: Building2, label: "Business" },
 ];
 
 // ─── Collapse section wrapper ─────────────────────────────────────────────────
 function Section({
   title, badge, defaultOpen = false, children,
-}: {
+}: Readonly<{
   title: string; badge?: string; defaultOpen?: boolean; children: React.ReactNode;
-}) {
+}>) {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="border border-border rounded-xl overflow-hidden">
@@ -57,7 +58,7 @@ function Section({
 // ─── Inline debt adder (same pattern as life-events) ─────────────────────────
 function DebtAdder({
   debts, onUpdate,
-}: { debts: DebtItem[]; onUpdate: (d: DebtItem[]) => void }) {
+}: Readonly<{ debts: DebtItem[]; onUpdate: (d: DebtItem[]) => void }>) {
   const [adding, setAdding] = useState(false);
   const [draft, setDraft]   = useState<Partial<DebtItem>>({
     name: "", outstanding: 0, emi: 0, interest_rate: 0, is_secured: false,
@@ -66,7 +67,7 @@ function DebtAdder({
   function add() {
     if (!draft.name || !draft.outstanding) return;
     onUpdate([...debts, {
-      name: draft.name!, outstanding: Number(draft.outstanding),
+      name: draft.name, outstanding: Number(draft.outstanding),
       emi: Number(draft.emi) || 0,
       interest_rate: Number(draft.interest_rate) || 0,
       is_secured: !!draft.is_secured,
@@ -153,17 +154,17 @@ function DebtAdder({
 // ─── Insurance toggle ─────────────────────────────────────────────────────────
 function InsuranceRow({
   label, sub, checked, coverValue, coverPlaceholder, onToggle, onCover,
-}: {
+}: Readonly<{
   label: string; sub: string; checked: boolean;
   coverValue: string; coverPlaceholder: string;
   onToggle: () => void; onCover: (v: string) => void;
-}) {
+}>) {
   return (
     <div className={cn("rounded-xl border p-3 transition-all",
       checked ? "border-primary/40 bg-primary/5" : "border-border bg-card")}>
       <label className="flex items-start gap-3 cursor-pointer">
         <div onClick={onToggle} className={cn(
-          "mt-0.5 h-4 w-4 rounded border-2 flex items-center justify-center cursor-pointer flex-shrink-0",
+          "mt-0.5 h-4 w-4 rounded border-2 flex items-center justify-center cursor-pointer shrink-0",
           checked ? "bg-primary border-primary" : "border-border")}>
           {checked && (
             <svg className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 12 12">
@@ -190,7 +191,7 @@ function InsuranceRow({
 }
 
 // ─── Main form ────────────────────────────────────────────────────────────────
-export function PartnerProfileForm({ label, color, form, onChange }: Props) {
+export function PartnerProfileForm({ label, color, form, onChange }: Readonly<Props>) {
   const n = (v: string) => Number(v) || 0;
   const monthly = n(form.monthly_gross_income);
   const expenses = n(form.monthly_expenses);
@@ -245,6 +246,7 @@ export function PartnerProfileForm({ label, color, form, onChange }: Props) {
           <Label>Employment</Label>
           <div className="grid grid-cols-3 gap-2">
             {EMPLOYMENT_OPTS.map((opt) => {
+              const Icon = opt.icon;
               const sel = form.employment_type === opt.value;
               return (
                 <button key={opt.value} type="button"
@@ -255,7 +257,7 @@ export function PartnerProfileForm({ label, color, form, onChange }: Props) {
                       ? "border-primary bg-primary/5 text-primary"
                       : "border-border text-muted-foreground hover:border-primary/30"
                   )}>
-                  <span>{opt.icon}</span>
+                  <Icon className="h-3.5 w-3.5 shrink-0" />
                   <span className="truncate">{opt.label}</span>
                 </button>
               );

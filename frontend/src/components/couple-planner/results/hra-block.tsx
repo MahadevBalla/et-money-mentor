@@ -7,7 +7,7 @@ interface Props {
   nameA: string; nameB: string;
 }
 
-export function HraBlock({ result, nameA, nameB }: Props) {
+export function HraBlock({ result, nameA, nameB }: Readonly<Props>) {
   const { better_hra_claimant, hra_savings } = result;
   const claimantName = resolvePartnerName(better_hra_claimant, nameA, nameB);
   const monthly = Math.round(hra_savings / 12);
@@ -16,7 +16,7 @@ export function HraBlock({ result, nameA, nameB }: Props) {
     <div className="bg-card border border-border rounded-xl overflow-hidden">
       {/* Header */}
       <div className="px-5 py-4 border-b border-border flex items-start gap-3">
-        <div className="h-9 w-9 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center flex-shrink-0">
+        <div className="h-9 w-9 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center shrink-0">
           <Home className="h-4 w-4 text-amber-600" />
         </div>
         <div>
@@ -41,7 +41,7 @@ export function HraBlock({ result, nameA, nameB }: Props) {
 
         {/* Action callout */}
         <div className="flex items-start gap-3 px-4 py-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-xl">
-          <CheckCircle2 className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
+          <CheckCircle2 className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
           <div>
             <p className="text-xs font-semibold text-amber-800 dark:text-amber-200">
               Action Required

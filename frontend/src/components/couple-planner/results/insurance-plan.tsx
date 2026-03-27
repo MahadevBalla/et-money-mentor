@@ -19,7 +19,7 @@ function getHint(text: string): string {
   return "Consult a SEBI-registered insurance advisor";
 }
 
-export function InsurancePlan({ result, nameA, nameB }: Props) {
+export function InsurancePlan({ result, nameA, nameB }: Readonly<Props>) {
   const rec = result.joint_insurance_recommendation;
   const items = parseInsuranceRecs(rec);
 
@@ -40,7 +40,7 @@ export function InsurancePlan({ result, nameA, nameB }: Props) {
           : "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800"
       )}>
         <div className={cn(
-          "h-9 w-9 rounded-full flex items-center justify-center flex-shrink-0",
+          "h-9 w-9 rounded-full flex items-center justify-center shrink-0",
           allOk
             ? "bg-green-100 dark:bg-green-900/40"
             : "bg-red-100 dark:bg-red-900/40"
@@ -79,7 +79,7 @@ export function InsurancePlan({ result, nameA, nameB }: Props) {
             return (
               <div key={i} className="px-5 py-4 flex items-start gap-3">
                 <div className={cn(
-                  "h-6 w-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5",
+                  "h-6 w-6 rounded-full flex items-center justify-center shrink-0 mt-0.5",
                   isCrit
                     ? "bg-red-100 dark:bg-red-900/40"
                     : "bg-amber-100 dark:bg-amber-900/40"
@@ -93,7 +93,7 @@ export function InsurancePlan({ result, nameA, nameB }: Props) {
                       {personalise(item)}
                     </p>
                     <span className={cn(
-                      "flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold",
+                      "shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold",
                       isCrit
                         ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300"
                         : "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300"

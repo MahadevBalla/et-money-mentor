@@ -92,7 +92,7 @@ export function PortfolioPage() {
 
             {file && (
               <div className="flex items-center gap-3 p-4 bg-card border border-border rounded-xl">
-                <FileText className="h-5 w-5 text-primary flex-shrink-0" />
+                <FileText className="h-5 w-5 text-primary shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{file.name}</p>
                   <p className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</p>
@@ -211,7 +211,7 @@ export function PortfolioPage() {
                 <ul className="space-y-2">
                   {result.result.rebalancing_suggestions.map((s, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
+                      <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
                       {s}
                     </li>
                   ))}

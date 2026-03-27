@@ -53,14 +53,14 @@ const GRADE_TAGLINE: Record<string, { text: string; color: string }> = {
   F: { text: "Critical — immediate action",    color: "text-red-600"    },
 };
 
-function DimensionCard({ dim }: { dim: DimensionScore }) {
+function DimensionCard({ dim }: Readonly<{ dim: DimensionScore }>) {
   const meta = DIMENSION_META[dim.name] ?? { icon: HeartPulse, colorClass: "text-primary", bgClass: "bg-primary/5" };
   const Icon = meta.icon;
   return (
     <div className="bg-card border border-border rounded-xl p-4 space-y-3">
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2.5">
-          <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0", meta.bgClass)}>
+          <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center shrink-0", meta.bgClass)}>
             <Icon className={cn("h-4 w-4", meta.colorClass)} />
           </div>
           <p className="text-sm font-semibold leading-tight">{dim.name}</p>
@@ -91,7 +91,7 @@ function DimensionCard({ dim }: { dim: DimensionScore }) {
   );
 }
 
-function AdviceSection({ advice }: { advice: HealthScoreApiResponse["advice"] }) {
+function AdviceSection({ advice }: Readonly<{ advice: HealthScoreApiResponse["advice"] }>) {
   const [disclaimerOpen, setDisclaimerOpen] = useState(false);
 
   return (
@@ -111,7 +111,7 @@ function AdviceSection({ advice }: { advice: HealthScoreApiResponse["advice"] })
           <ol className="space-y-2">
             {advice.key_actions.map((action, i) => (
               <li key={i} className="flex items-start gap-2.5 text-sm text-muted-foreground">
-                <span className="mt-0.5 h-5 w-5 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center flex-shrink-0">
+                <span className="mt-0.5 h-5 w-5 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center shrink-0">
                   {i + 1}
                 </span>
                 {action}
@@ -128,7 +128,7 @@ function AdviceSection({ advice }: { advice: HealthScoreApiResponse["advice"] })
           <ul className="space-y-2">
             {advice.risks.map((risk, i) => (
               <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-amber-500 flex-shrink-0" />
+                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0" />
                 {risk}
               </li>
             ))}
@@ -143,7 +143,7 @@ function AdviceSection({ advice }: { advice: HealthScoreApiResponse["advice"] })
           onClick={() => setDisclaimerOpen(!disclaimerOpen)}
           className="w-full flex items-center gap-2 px-4 py-2.5 text-left"
         >
-          <Info className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+          <Info className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
           <span className="text-xs text-muted-foreground font-medium">Disclaimer</span>
           {disclaimerOpen
             ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground ml-auto" />
@@ -159,7 +159,7 @@ function AdviceSection({ advice }: { advice: HealthScoreApiResponse["advice"] })
   );
 }
 
-function WhatIfBar({ dimensions }: { dimensions: DimensionScore[] }) {
+function WhatIfBar({ dimensions }: Readonly<{ dimensions: DimensionScore[] }>) {
   // Show top 3 dimensions that scored < 70 as quick wins
   const WEIGHTS: Record<string, number> = {
     "Emergency Fund": 20, "Debt Health": 20, "Diversification": 15,
@@ -192,7 +192,7 @@ function WhatIfBar({ dimensions }: { dimensions: DimensionScore[] }) {
               key={name}
               className="flex items-center gap-3 p-3 bg-muted rounded-xl"
             >
-              <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0", meta?.bgClass)}>
+              <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center shrink-0", meta?.bgClass)}>
                 <Icon className={cn("h-4 w-4", meta?.colorClass)} />
               </div>
               <div>
@@ -209,7 +209,7 @@ function WhatIfBar({ dimensions }: { dimensions: DimensionScore[] }) {
   );
 }
 
-export function HealthScoreResults({ response, onReset }: Props) {
+export function HealthScoreResults({ response, onReset }: Readonly<Props>) {
   const { result, advice } = response;
   const tagline = GRADE_TAGLINE[result.grade] ?? { text: "", color: "text-foreground" };
 

@@ -23,7 +23,7 @@ const RISK_OPTIONS: { value: RiskProfile; label: string; desc: string; color: st
   { value: "aggressive",   label: "Aggressive",   desc: "I can handle market volatility",  color: "border-orange-400 bg-orange-50 text-orange-700 dark:bg-orange-950/30 dark:text-orange-300" },
 ];
 
-export function StepBasics({ form, onChange }: Props) {
+export function StepBasics({ form, onChange }: Readonly<Props>) {
   return (
     <div className="space-y-6">
       {/* Age + City */}

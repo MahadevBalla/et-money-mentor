@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { usePathname } from "next/navigation";
 
-export function PageTransition({ children }: { children: React.ReactNode }) {
+export function PageTransition({ children }: Readonly<{ children: React.ReactNode }>) {
   const pathname = usePathname();
   return (
     <motion.div

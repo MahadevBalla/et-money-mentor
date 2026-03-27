@@ -1,5 +1,5 @@
 // frontend/src/components/mf-xray/results/overlap-pairs.tsx
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, ArrowLeftRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { overlapSeverity, type OverlapPair } from "@/lib/mf-xray-types";
 import { AnimatedNumber } from "@/components/ui/animated-number";
@@ -7,25 +7,44 @@ import { AnimatedNumber } from "@/components/ui/animated-number";
 interface Props { pairs: OverlapPair[] }
 
 const SEV_CONFIG = {
-  red:    { dot: "bg-red-500",    badge: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300",    label: "High",   hint: "Consider: Keep the lower-cost fund, exit the other" },
-  amber:  { dot: "bg-amber-500",  badge: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300", label: "Medium", hint: "Monitor: Acceptable but reduces diversification"    },
-  yellow: { dot: "bg-yellow-500", badge: "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300",label: "Low",    hint: "Low overlap — no immediate action needed"            },
-};
+  red: {
+    dot: "bg-destructive",
+    bar: "bg-destructive",
+    badge: "bg-destructive/10 text-destructive",
+    label: "High",
+    hint: "Consider: Keep the lower-cost fund, exit the other",
+  },
+  amber: {
+    dot: "bg-warning",
+    bar: "bg-warning",
+    badge: "bg-warning/10 text-warning",
+    label: "Medium",
+    hint: "Monitor: Acceptable but reduces diversification",
+  },
+  yellow: {
+    dot: "bg-yellow-400",
+    bar: "bg-yellow-400",
+    badge: "bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300",
+    label: "Low",
+    hint: "Low overlap — no immediate action needed",
+  },
+} as const;
 
-export function OverlapPairs({ pairs }: Props) {
+export function OverlapPairs({ pairs }: Readonly<Props>) {
   if (!pairs.length) {
     return (
       <div className="bg-card border border-border rounded-xl overflow-hidden">
-        <div className="px-5 py-4 border-b border-border">
-          <p className="text-sm font-semibold">🔄 Fund Overlap</p>
+        <div className="px-5 py-4 border-b border-border flex items-center gap-2">
+          <ArrowLeftRight className="h-4 w-4 text-muted-foreground" />
+          <p className="text-sm font-semibold">Fund Overlap</p>
         </div>
         <div className="px-5 py-5 flex items-center gap-3">
-          <div className="h-9 w-9 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center flex-shrink-0">
-            <ShieldCheck className="h-4 w-4 text-green-600" />
+          <div className="h-9 w-9 rounded-full bg-success/10 flex items-center justify-center shrink-0">
+            <ShieldCheck className="h-4 w-4 text-success" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-green-700 dark:text-green-300">
-              No significant overlap detected ✓
+            <p className="text-sm font-semibold text-success">
+              No significant overlap detected
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
               Your funds cover distinct market segments — good diversification.
@@ -37,35 +56,41 @@ export function OverlapPairs({ pairs }: Props) {
   }
 
   const sorted = [...pairs].sort((a, b) => b.overlap_percent - a.overlap_percent);
+  const isHighSeverity = sorted[0].overlap_percent >= 65;
 
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden">
       {/* Header */}
       <div className={cn(
         "px-5 py-4 border-b flex items-center justify-between",
-        sorted[0].overlap_percent >= 65
-          ? "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800"
-          : "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800"
+        isHighSeverity
+          ? "bg-destructive/10 border-destructive/30"
+          : "bg-warning/10 border-warning/30"
       )}>
-        <div>
-          <p className={cn("text-sm font-bold",
-            sorted[0].overlap_percent >= 65
-              ? "text-red-800 dark:text-red-200"
-              : "text-amber-800 dark:text-amber-200"
-          )}>
-            🔄 Fund Overlap Detected
-          </p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {pairs.length} overlapping pair{pairs.length !== 1 ? "s" : ""}
-          </p>
+        <div className="flex items-center gap-2">
+          <ArrowLeftRight className={cn(
+            "h-4 w-4 shrink-0",
+            isHighSeverity ? "text-destructive" : "text-warning"
+          )} />
+          <div>
+            <p className={cn(
+              "text-sm font-bold",
+              isHighSeverity ? "text-destructive" : "text-warning"
+            )}>
+              Fund Overlap Detected
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {pairs.length} overlapping pair{pairs.length === 1 ? "" : "s"}
+            </p>
+          </div>
         </div>
         <span className={cn(
           "px-2 py-1 rounded-full text-xs font-bold",
-          sorted[0].overlap_percent >= 65
-            ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300"
-            : "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300"
+          isHighSeverity
+            ? "bg-destructive/10 text-destructive"
+            : "bg-warning/10 text-warning"
         )}>
-          {pairs.filter(p => p.overlap_percent >= 65).length} high
+          {pairs.filter((p) => p.overlap_percent >= 65).length} high
         </span>
       </div>
 
@@ -75,9 +100,8 @@ export function OverlapPairs({ pairs }: Props) {
           const cfg = SEV_CONFIG[sev];
           return (
             <div key={i} className="px-5 py-4 space-y-3">
-              {/* Pair header */}
               <div className="flex items-start gap-3">
-                <div className={cn("mt-1 h-2.5 w-2.5 rounded-full flex-shrink-0", cfg.dot)} />
+                <div className={cn("mt-1 h-2.5 w-2.5 rounded-full shrink-0", cfg.dot)} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -87,7 +111,7 @@ export function OverlapPairs({ pairs }: Props) {
                         <span className="truncate">{p.fund_b}</span>
                       </p>
                     </div>
-                    <div className="flex-shrink-0 text-right space-y-1">
+                    <div className="shrink-0 text-right space-y-1">
                       <p className="text-base font-bold text-foreground">
                         <AnimatedNumber
                           value={p.overlap_percent}
@@ -104,8 +128,7 @@ export function OverlapPairs({ pairs }: Props) {
                   {/* Overlap bar */}
                   <div className="h-2 bg-muted rounded-full mt-2 overflow-hidden">
                     <div
-                      className={cn("h-full rounded-full transition-all duration-700",
-                        sev === "red" ? "bg-red-500" : sev === "amber" ? "bg-amber-500" : "bg-yellow-500")}
+                      className={cn("h-full rounded-full transition-all duration-700", cfg.bar)}
                       style={{ width: `${p.overlap_percent}%` }}
                     />
                   </div>
@@ -127,7 +150,6 @@ export function OverlapPairs({ pairs }: Props) {
                     </div>
                   )}
 
-                  {/* Hint */}
                   <p className="text-xs text-muted-foreground mt-2">→ {cfg.hint}</p>
                 </div>
               </div>

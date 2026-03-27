@@ -1,9 +1,11 @@
 // frontend/src/components/couple-planner/steps/step-about.tsx
 "use client";
 
-import { Input }  from "@/components/ui/input";
-import { Label }  from "@/components/ui/label";
-import { cn }     from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
+import { HeartHandshake, Home, Users } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type { CoupleFormState } from "@/lib/couple-types";
 
 interface Props {
@@ -14,14 +16,16 @@ interface Props {
 type Relationship = CoupleFormState["relationship"];
 
 const RELATIONSHIP_OPTIONS: {
-  value: Relationship; emoji: string; label: string; sub: string;
+  value: Relationship; icon: LucideIcon; label: string; sub: string;
 }[] = [
-  { value: "married",        emoji: "💍", label: "Married",         sub: "Legally married couple"     },
-  { value: "living_together",emoji: "🏠", label: "Living Together", sub: "Committed, sharing expenses" },
-  { value: "planning",       emoji: "💑", label: "Planning Ahead",  sub: "Not yet living together"    },
-];
+    { value: "married", icon: HeartHandshake, label: "Married", sub: "Legally married couple" },
+    { value: "living_together", icon: Home, label: "Living Together", sub: "Committed, sharing expenses" },
+    { value: "planning", icon: Users, label: "Planning Ahead", sub: "Not yet living together" },
+  ];
 
-export function StepAbout({ form, onChange }: Props) {
+export function StepAbout({ form, onChange }: Readonly<Props>) {
+  const selectedOption = RELATIONSHIP_OPTIONS.find((o) => o.value === form.relationship);
+
   return (
     <div className="space-y-6">
       <div>
@@ -58,6 +62,7 @@ export function StepAbout({ form, onChange }: Props) {
         <Label>Relationship status</Label>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           {RELATIONSHIP_OPTIONS.map((opt) => {
+            const Icon = opt.icon;
             const sel = form.relationship === opt.value;
             return (
               <button
@@ -72,19 +77,17 @@ export function StepAbout({ form, onChange }: Props) {
                     : "border-border bg-card hover:border-primary/30"
                 )}
               >
-                <span className="text-2xl flex-shrink-0 leading-none mt-0.5">
-                  {opt.emoji}
-                </span>
+                <div className={cn(
+                  "h-9 w-9 rounded-lg flex items-center justify-center shrink-0 mt-0.5",
+                  sel ? "bg-primary/10" : "bg-muted"
+                )}>
+                  <Icon className={cn("h-4 w-4", sel ? "text-primary" : "text-muted-foreground")} />
+                </div>
                 <div>
-                  <p className={cn(
-                    "text-sm font-semibold",
-                    sel ? "text-primary" : "text-foreground"
-                  )}>
+                  <p className={cn("text-sm font-semibold", sel ? "text-primary" : "text-foreground")}>
                     {opt.label}
                   </p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
-                    {opt.sub}
-                  </p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{opt.sub}</p>
                 </div>
               </button>
             );
@@ -93,19 +96,24 @@ export function StepAbout({ form, onChange }: Props) {
       </div>
 
       {/* Preview banner */}
-      <div className="flex items-center gap-3 px-4 py-3 bg-primary/5 border border-primary/20 rounded-xl">
-        <span className="text-2xl">
-          {RELATIONSHIP_OPTIONS.find((o) => o.value === form.relationship)?.emoji}
-        </span>
-        <div>
-          <p className="text-xs font-semibold text-foreground">
-            {form.name_a || "Partner A"} &amp; {form.name_b || "Partner B"}
-          </p>
-          <p className="text-[11px] text-muted-foreground">
-            Joint plan will be personalised with these names in all results.
-          </p>
-        </div>
-      </div>
+      {selectedOption && (() => {
+        const Icon = selectedOption.icon;
+        return (
+          <div className="flex items-center gap-3 px-4 py-3 bg-primary/5 border border-primary/20 rounded-xl">
+            <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <Icon className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-foreground">
+                {form.name_a || "Partner A"} &amp; {form.name_b || "Partner B"}
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                Joint plan will be personalised with these names in all results.
+              </p>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

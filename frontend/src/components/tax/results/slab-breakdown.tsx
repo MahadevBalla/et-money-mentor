@@ -12,7 +12,7 @@ interface Props {
   deductions: TaxDeductions;
 }
 
-export function SlabBreakdown({ result, deductions }: Props) {
+export function SlabBreakdown({ result, deductions }: Readonly<Props>) {
   const [open, setOpen] = useState(false);
 
   const regime    = result.recommended_regime;
@@ -35,8 +35,8 @@ export function SlabBreakdown({ result, deductions }: Props) {
           </p>
         </div>
         {open
-          ? <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-          : <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          ? <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
+          : <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
         }
       </button>
 

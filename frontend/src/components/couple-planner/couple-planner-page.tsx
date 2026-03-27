@@ -4,7 +4,7 @@
 import { useState } from "react";
 import {
   ChevronLeft, ChevronRight, CheckCircle2,
-  Loader2, Heart,
+  Loader2, Heart, Users2, UserRound, Target, LucideIcon
 } from "lucide-react";
 import { AppShell }    from "@/components/layout/app-shell";
 import { Button }      from "@/components/ui/button";
@@ -29,10 +29,10 @@ import { InsurancePlan} from "./results/insurance-plan";
 import { JointRoadmap } from "./results/joint-roadmap";
 
 // ─── Steps config ─────────────────────────────────────────────────────────────
-const STEPS = [
-  { id: 1, label: "About You",    icon: "💑" },
-  { id: 2, label: "Your Profiles", icon: "👥" },
-  { id: 3, label: "Joint Goals",  icon: "🎯" },
+const STEPS: { id: number; label: string; icon: LucideIcon }[] = [
+  { id: 1, label: "About You",     icon: Users2 },
+  { id: 2, label: "Your Profiles", icon: UserRound },
+  { id: 3, label: "Joint Goals",   icon: Target },
 ];
 
 // ─── Validation ───────────────────────────────────────────────────────────────
@@ -65,12 +65,13 @@ function validate(step: number, form: CoupleFormState): string | null {
 // ─── Stepper ──────────────────────────────────────────────────────────────────
 function StepperHeader({
   current, onStepClick,
-}: { current: number; onStepClick: (n: number) => void }) {
+}: Readonly<{ current: number; onStepClick: (n: number) => void }>) {
   return (
     <div className="flex items-center mb-8">
       {STEPS.map((step, idx) => {
         const isCompleted = current > step.id;
         const isActive    = current === step.id;
+        const Icon = step.icon;
         return (
           <div key={step.id} className="flex items-center flex-1 last:flex-none">
             <button
@@ -87,7 +88,10 @@ function StepperHeader({
                   ? "border-primary text-primary bg-background"
                   : "border-border text-muted-foreground bg-background"
               )}>
-                {isCompleted ? <CheckCircle2 className="h-4 w-4" /> : step.icon}
+                {isCompleted
+                  ? <CheckCircle2 className="h-4 w-4" />
+                  : <Icon className="h-4 w-4" />
+                }
               </div>
               <p className={cn(
                 "text-[11px] font-medium hidden sm:block",
@@ -118,7 +122,7 @@ const LOADING_STAGES = [
   "Generating personalised joint advice...",
 ];
 
-function LoadingOverlay({ nameA, nameB }: { nameA: string; nameB: string }) {
+function LoadingOverlay({ nameA, nameB }: Readonly<{ nameA: string; nameB: string }>) {
   const [stageIdx, setStageIdx] = useState(0);
 
   useState(() => {
@@ -146,12 +150,14 @@ function LoadingOverlay({ nameA, nameB }: { nameA: string; nameB: string }) {
         {LOADING_STAGES.map((label, i) => (
           <div key={i} className={cn("flex items-center gap-2 text-sm", i > stageIdx && "opacity-30")}>
             {i < stageIdx
-              ? <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
+              ? <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
               : i === stageIdx
-              ? <Loader2 className="h-4 w-4 text-primary animate-spin flex-shrink-0" />
-              : <div className="h-4 w-4 rounded-full border border-border flex-shrink-0" />
+                ? <Loader2 className="h-4 w-4 text-primary animate-spin shrink-0" />
+                : <div className="h-4 w-4 rounded-full border border-border shrink-0" />
             }
-            <span className={cn(i === stageIdx ? "text-foreground font-medium" : "text-muted-foreground")}>
+            <span className={cn(
+              i === stageIdx ? "text-foreground font-medium" : "text-muted-foreground"
+            )}>
               {label}
             </span>
           </div>
@@ -207,7 +213,6 @@ export function CouplePlannerPage() {
     setError("");
   }
 
-  // Average years to retirement for SIP corpus projection
   const avgRetirementYears = Math.max(
     Math.round(
       ((Number(form.partner_a.retirement_age) || 60) - (Number(form.partner_a.age) || 30) +
@@ -297,7 +302,6 @@ export function CouplePlannerPage() {
                 </div>
               )}
 
-              {/* Nav */}
               <div className={cn(
                 "flex items-center mt-6 pt-4 border-t border-border",
                 step === 1 ? "justify-end" : "justify-between"
@@ -314,7 +318,7 @@ export function CouplePlannerPage() {
                   </Button>
                 ) : (
                   <Button onClick={goNext} size="lg" className="gap-1.5">
-                    💑 Optimise Our Finances
+                    <Heart className="h-4 w-4" /> Optimise Our Finances
                   </Button>
                 )}
               </div>

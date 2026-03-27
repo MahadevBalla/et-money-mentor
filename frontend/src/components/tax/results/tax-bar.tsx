@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 interface Props { result: TaxResult; }
 
-export function TaxBar({ result }: Props) {
+export function TaxBar({ result }: Readonly<Props>) {
   const gross   = result.gross_income;
   const oldPct  = Math.min((result.old_regime_tax / gross) * 100, 100);
   const newPct  = Math.min((result.new_regime_tax / gross) * 100, 100);
@@ -46,7 +46,7 @@ export function TaxBar({ result }: Props) {
           <div key={row.label} className="space-y-1.5">
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
-                <div className={cn("h-2.5 w-2.5 rounded-sm flex-shrink-0", row.barColor)} />
+                <div className={cn("h-2.5 w-2.5 rounded-sm shrink-0", row.barColor)} />
                 <span className={cn(
                   "font-medium",
                   row.isWinner ? "text-foreground" : "text-muted-foreground"

@@ -3,6 +3,7 @@ import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import { ThemeProvider as MUIThemeProvider } from '@mui/material/styles';
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { Bricolage_Grotesque } from "next/font/google";
+import { LenisProvider } from "@/components/layout/lenis-provider";
 import theme from "@/theme";
 import "./globals.css";
 
@@ -63,7 +64,9 @@ export default function RootLayout({
         >
           <AppRouterCacheProvider options={{ enableCssLayer: true }}>
             <MUIThemeProvider theme={theme}>
-              {children}
+              <LenisProvider>
+                {children}
+              </LenisProvider>
             </MUIThemeProvider>
           </AppRouterCacheProvider>
         </NextThemesProvider>

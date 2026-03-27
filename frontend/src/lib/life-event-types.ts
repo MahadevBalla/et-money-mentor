@@ -5,6 +5,16 @@
 import type { EmploymentType } from "@/lib/health-score-types";
 export type { EmploymentType };
 
+import type { LucideIcon } from "lucide-react";
+import {
+  Gift,
+  Landmark,
+  Heart,
+  Baby,
+  BriefcaseBusiness,
+  House,
+} from "lucide-react";
+
 // ─── Event type enum (mirrors LifeEventType in common.py) ────────────────────
 export type LifeEventType =
   | "bonus"
@@ -15,10 +25,7 @@ export type LifeEventType =
   | "home_purchase";
 
 // ─── API payload ──────────────────────────────────────────────────────────────
-// Backend router reads raw_data dict and extracts event_type, event_amount,
-// event_details from top-level keys. Profile fields go at root level too.
 export interface LifeEventPayload {
-  // UserProfile fields (required by intake agent)
   age: number;
   city: string;
   employment_type: EmploymentType;
@@ -46,11 +53,9 @@ export interface LifeEventPayload {
     other_deductions: number;
   };
   goals: [];
-
-  // Life event specific — extracted by router before passing to intake agent
   event_type: LifeEventType;
   event_amount: number;
-  event_details: Record<string, number>; // e.g. { property_value: 8000000 }
+  event_details: Record<string, number>;
 }
 
 export interface DebtItem {
@@ -69,7 +74,6 @@ export interface InsuranceCoverage {
   has_critical_illness: boolean;
 }
 
-// ─── API response ─────────────────────────────────────────────────────────────
 export interface LifeEventAllocation {
   category: string;
   amount: number;
@@ -97,12 +101,8 @@ export interface LifeEventApiResponse {
   decision_log: unknown[];
 }
 
-// ─── Wizard form state ────────────────────────────────────────────────────────
 export interface LifeEventFormState {
-  // Step 1
   event_type: LifeEventType | null;
-
-  // Step 2 — profile
   age: string;
   city: string;
   employment_type: EmploymentType;
@@ -114,10 +114,8 @@ export interface LifeEventFormState {
   has_health: boolean;
   health_cover: string;
   debts: DebtItem[];
-
-  // Step 3 — event details
-  event_amount: string;          // bonus / inheritance
-  property_value: string;        // home_purchase → event_details.property_value
+  event_amount: string;
+  property_value: string;
 }
 
 export const DEFAULT_LIFE_EVENT_FORM: LifeEventFormState = {
@@ -137,29 +135,27 @@ export const DEFAULT_LIFE_EVENT_FORM: LifeEventFormState = {
   property_value: "",
 };
 
-// ─── Event metadata (UI config per event type) ────────────────────────────────
+// ─── Event metadata ───────────────────────────────────────────────────────────
 export interface EventMeta {
   type: LifeEventType;
-  emoji: string;
+  icon: LucideIcon;            // replaces emoji: string
   label: string;
   tagline: string;
   description: string;
-  // Visual theming
-  colorClass: string;          // Tailwind border + bg classes for selected state
-  heroBg: string;              // results hero background gradient
-  heroText: string;            // results hero text color
+  colorClass: string;
+  heroBg: string;
+  heroText: string;
   heroBorder: string;
-  // Behaviour
-  needsAmount: boolean;        // bonus, inheritance
-  needsPropertyValue: boolean; // home_purchase
-  isCrisis: boolean;           // job_loss
+  needsAmount: boolean;
+  needsPropertyValue: boolean;
+  isCrisis: boolean;
   category: "windfall" | "milestone";
 }
 
 export const EVENT_META: Record<LifeEventType, EventMeta> = {
   bonus: {
     type: "bonus",
-    emoji: "🎁",
+    icon: Gift,
     label: "Got a Bonus",
     tagline: "Make it work harder",
     description: "Annual bonus, performance pay, or any windfall income",
@@ -174,7 +170,7 @@ export const EVENT_META: Record<LifeEventType, EventMeta> = {
   },
   inheritance: {
     type: "inheritance",
-    emoji: "🏛️",
+    icon: Landmark,
     label: "Received Inheritance",
     tagline: "Invest it wisely",
     description: "Inherited money, property, or other assets",
@@ -189,7 +185,7 @@ export const EVENT_META: Record<LifeEventType, EventMeta> = {
   },
   marriage: {
     type: "marriage",
-    emoji: "💍",
+    icon: Heart,
     label: "Getting Married",
     tagline: "Combine finances right",
     description: "Planning your financial life as a couple",
@@ -204,7 +200,7 @@ export const EVENT_META: Record<LifeEventType, EventMeta> = {
   },
   new_baby: {
     type: "new_baby",
-    emoji: "👶",
+    icon: Baby,
     label: "New Baby",
     tagline: "Prepare financially",
     description: "Planning for a newborn's arrival and future",
@@ -219,7 +215,7 @@ export const EVENT_META: Record<LifeEventType, EventMeta> = {
   },
   job_loss: {
     type: "job_loss",
-    emoji: "💼",
+    icon: BriefcaseBusiness,
     label: "Lost My Job",
     tagline: "Survive and recover fast",
     description: "Unemployment, layoff, or sudden income loss",
@@ -234,7 +230,7 @@ export const EVENT_META: Record<LifeEventType, EventMeta> = {
   },
   home_purchase: {
     type: "home_purchase",
-    emoji: "🏡",
+    icon: House,
     label: "Buying a Home",
     tagline: "How much down, what's next?",
     description: "Planning finances around a property purchase",
@@ -249,7 +245,6 @@ export const EVENT_META: Record<LifeEventType, EventMeta> = {
   },
 };
 
-// Helper to build final payload from form state
 export function buildLifeEventPayload(form: LifeEventFormState): LifeEventPayload {
   const meta = EVENT_META[form.event_type!];
   const num = (v: string) => Number(v) || 0;

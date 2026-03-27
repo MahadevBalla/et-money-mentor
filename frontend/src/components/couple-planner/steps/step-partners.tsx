@@ -11,7 +11,7 @@ interface Props {
   onChange: (patch: Partial<CoupleFormState>) => void;
 }
 
-export function StepPartners({ form, onChange }: Props) {
+export function StepPartners({ form, onChange }: Readonly<Props>) {
   const [activeTab, setActiveTab] = useState<"a" | "b">("a");
 
   const nameA = form.name_a || "Partner A";

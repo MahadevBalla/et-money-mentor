@@ -27,7 +27,7 @@ const ASSET_FIELDS: {
   { key: "other",       label: "Other",            hint: "Crypto, angel, alternatives"},
 ];
 
-export function StepMoney({ form, onChange }: Props) {
+export function StepMoney({ form, onChange }: Readonly<Props>) {
   const [assetsExpanded, setAssetsExpanded] = useState(false);
   const [hasEMI, setHasEMI] = useState(Number(form.total_emi) > 0);
 
@@ -198,9 +198,9 @@ export function StepMoney({ form, onChange }: Props) {
             </span>
           </div>
           {assetsExpanded ? (
-            <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
           ) : (
-            <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
           )}
         </button>
 

@@ -21,7 +21,7 @@ function getActionHint(text: string): string {
   return "Consult your insurance advisor";
 }
 
-export function InsuranceGaps({ gaps }: Props) {
+export function InsuranceGaps({ gaps }: Readonly<Props>) {
   if (!gaps.length) return null;
 
   const criticalCount = gaps.filter((g) => getSeverity(g) === "critical").length;
@@ -30,7 +30,7 @@ export function InsuranceGaps({ gaps }: Props) {
     <div className="bg-card border border-red-200 dark:border-red-800 rounded-xl overflow-hidden">
       {/* Header */}
       <div className="bg-red-50 dark:bg-red-950/30 px-5 py-4 flex items-start gap-3">
-        <div className="h-9 w-9 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center flex-shrink-0 mt-0.5">
+        <div className="h-9 w-9 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center shrink-0 mt-0.5">
           <AlertTriangle className="h-4 w-4 text-red-600" />
         </div>
         <div>
@@ -55,7 +55,7 @@ export function InsuranceGaps({ gaps }: Props) {
           return (
             <div key={i} className="px-5 py-4 flex items-start gap-3">
               <div className={cn(
-                "h-6 w-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5",
+                "h-6 w-6 rounded-full flex items-center justify-center shrink-0 mt-0.5",
                 isCrit
                   ? "bg-red-100 dark:bg-red-900/40"
                   : "bg-amber-100 dark:bg-amber-900/40"
@@ -70,7 +70,7 @@ export function InsuranceGaps({ gaps }: Props) {
                 <div className="flex items-start gap-2">
                   <p className="text-sm text-foreground leading-relaxed flex-1">{gap}</p>
                   <span className={cn(
-                    "flex-shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold",
+                    "shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold",
                     isCrit
                       ? "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300"
                       : "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300"

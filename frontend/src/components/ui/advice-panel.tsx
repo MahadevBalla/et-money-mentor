@@ -33,7 +33,7 @@ export function AdvicePanel({ advice }: AdvicePanelProps) {
           <ul className="space-y-2">
             {advice.key_actions.map((action, i) => (
               <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
+                <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
                 {action}
               </li>
             ))}
@@ -49,7 +49,7 @@ export function AdvicePanel({ advice }: AdvicePanelProps) {
           <ul className="space-y-2">
             {advice.risks.map((risk, i) => (
               <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-amber-500 flex-shrink-0" />
+                <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0" />
                 {risk}
               </li>
             ))}
@@ -59,7 +59,7 @@ export function AdvicePanel({ advice }: AdvicePanelProps) {
 
       {/* Disclaimer */}
       <div className="flex items-start gap-2 p-3 bg-muted rounded-lg">
-        <Info className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+        <Info className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
         <p className="text-xs text-muted-foreground">{advice.disclaimer}</p>
       </div>
     </div>

@@ -85,10 +85,10 @@ function buildPayload(form: TaxFormState): TaxPayload {
 function StepperHeader({
   current,
   onStepClick,
-}: {
+}: Readonly<{
   current: number;
   onStepClick: (n: number) => void;
-}) {
+}>) {
   return (
     <div className="flex items-center gap-0 mb-8">
       {STEPS.map((step, idx) => {
@@ -164,10 +164,10 @@ function LoadingOverlay() {
         {LOADING_STAGES.map((label, i) => (
           <div key={i} className={cn("flex items-center gap-2 text-sm", i > stageIdx && "opacity-30")}>
             {i < stageIdx
-              ? <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
+              ? <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
               : i === stageIdx
-              ? <Loader2 className="h-4 w-4 text-primary animate-spin flex-shrink-0" />
-              : <div className="h-4 w-4 rounded-full border border-border flex-shrink-0" />
+              ? <Loader2 className="h-4 w-4 text-primary animate-spin shrink-0" />
+              : <div className="h-4 w-4 rounded-full border border-border shrink-0" />
             }
             <span className={cn("text-sm", i === stageIdx ? "text-foreground font-medium" : "text-muted-foreground")}>
               {label}
@@ -282,7 +282,7 @@ export function TaxPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="flex items-center justify-between bg-muted rounded-xl px-4 py-3">
                 <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                     <Flame className="h-4 w-4 text-primary" />
                   </div>
                   <div>
@@ -293,14 +293,14 @@ export function TaxPage() {
                   </div>
                 </div>
                 <a href="/fire">
-                  <Button variant="outline" size="sm" className="gap-1 flex-shrink-0 text-xs">
+                  <Button variant="outline" size="sm" className="gap-1 shrink-0 text-xs">
                     FIRE <ArrowRight className="h-3 w-3" />
                   </Button>
                 </a>
               </div>
               <div className="flex items-center justify-between bg-muted rounded-xl px-4 py-3">
                 <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                     <TrendingUp className="h-4 w-4 text-primary" />
                   </div>
                   <div>
@@ -311,7 +311,7 @@ export function TaxPage() {
                   </div>
                 </div>
                 <a href="/health-score">
-                  <Button variant="outline" size="sm" className="gap-1 flex-shrink-0 text-xs">
+                  <Button variant="outline" size="sm" className="gap-1 shrink-0 text-xs">
                     Health <ArrowRight className="h-3 w-3" />
                   </Button>
                 </a>

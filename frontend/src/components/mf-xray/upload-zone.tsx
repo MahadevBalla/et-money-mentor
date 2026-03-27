@@ -2,7 +2,10 @@
 "use client";
 
 import { useRef, useState, useCallback } from "react";
-import { Upload, FileText, X, AlertCircle, ExternalLink } from "lucide-react";
+import {
+  Upload, FileText, X, AlertCircle,
+  ExternalLink, Lock, Microscope,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { validateFile, type UploadStatus } from "@/lib/mf-xray-types";
@@ -28,7 +31,7 @@ const HOW_TO = [
   },
 ];
 
-export function UploadZone({ status, error, onFile, onSubmit, onReset }: Props) {
+export function UploadZone({ status, error, onFile, onSubmit, onReset }: Readonly<Props>) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -66,7 +69,7 @@ export function UploadZone({ status, error, onFile, onSubmit, onReset }: Props) 
   }
 
   const displayError = validationError || error;
-  const isUploading  = status === "uploading";
+  const isUploading = status === "uploading";
 
   return (
     <div className="space-y-5">
@@ -115,9 +118,9 @@ export function UploadZone({ status, error, onFile, onSubmit, onReset }: Props) 
         </div>
       ) : (
         /* ── File selected: pre-submit card ── */
-        <div className="flex items-center gap-4 px-5 py-4 bg-green-50 dark:bg-green-950/20 border-2 border-green-200 dark:border-green-800 rounded-xl">
-          <div className="h-10 w-10 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center flex-shrink-0">
-            <FileText className="h-5 w-5 text-green-600" />
+        <div className="flex items-center gap-4 px-5 py-4 bg-success/5 border-2 border-success/30 rounded-xl">
+          <div className="h-10 w-10 rounded-xl bg-success/10 flex items-center justify-center shrink-0">
+            <FileText className="h-5 w-5 text-success" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-foreground truncate">{selectedFile.name}</p>
@@ -131,7 +134,7 @@ export function UploadZone({ status, error, onFile, onSubmit, onReset }: Props) 
             <button
               type="button"
               onClick={clearFile}
-              className="text-muted-foreground hover:text-destructive transition-colors flex-shrink-0"
+              className="text-muted-foreground hover:text-destructive transition-colors shrink-0"
               aria-label="Remove file"
             >
               <X className="h-4 w-4" />
@@ -143,16 +146,17 @@ export function UploadZone({ status, error, onFile, onSubmit, onReset }: Props) 
       {/* ── Validation / API error ── */}
       {displayError && (
         <div className="flex items-start gap-2.5 px-4 py-3 bg-destructive/10 border border-destructive/30 rounded-xl">
-          <AlertCircle className="h-4 w-4 text-destructive flex-shrink-0 mt-0.5" />
+          <AlertCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
           <p className="text-sm text-destructive">{displayError}</p>
         </div>
       )}
 
       {/* ── Privacy note ── */}
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <span className="text-base">🔒</span>
+        <Lock className="h-3.5 w-3.5 shrink-0" />
         <span>
-          Your statement is analysed in real-time and <strong className="text-foreground">never stored</strong> on our servers.
+          Your statement is analysed in real-time and{" "}
+          <strong className="text-foreground">never stored</strong> on our servers.
         </span>
       </div>
 
@@ -170,7 +174,10 @@ export function UploadZone({ status, error, onFile, onSubmit, onReset }: Props) 
               Analysing...
             </>
           ) : (
-            <>🔬 Analyse Portfolio</>
+            <>
+              <Microscope className="h-4 w-4" />
+              Analyse Portfolio
+            </>
           )}
         </Button>
       )}
@@ -189,7 +196,7 @@ export function UploadZone({ status, error, onFile, onSubmit, onReset }: Props) 
               rel="noopener noreferrer"
               className="flex items-start gap-3 px-4 py-3 bg-card border border-border rounded-xl hover:border-primary/40 hover:bg-muted/30 transition-all group"
             >
-              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
                 <FileText className="h-4 w-4 text-primary" />
               </div>
               <div className="flex-1 min-w-0">

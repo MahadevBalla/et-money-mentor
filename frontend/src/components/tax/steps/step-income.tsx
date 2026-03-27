@@ -4,6 +4,11 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import {
+  Briefcase, Laptop, Building2,
+  Calendar, CalendarDays, Lightbulb, Info,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { FY_LABEL, type TaxFormState } from "@/lib/tax-types";
 import type { EmploymentType } from "@/lib/health-score-types";
 
@@ -16,12 +21,12 @@ const EMPLOYMENT_OPTIONS: {
   value: EmploymentType;
   label: string;
   desc: string;
-  icon: string;
+  icon: LucideIcon;
 }[] = [
-  { value: "salaried",      label: "Salaried",      desc: "Full-time employee", icon: "💼" },
-  { value: "self_employed", label: "Self-Employed",  desc: "Freelancer / consultant", icon: "🧑‍💻" },
-  { value: "business",      label: "Business Owner", desc: "Proprietor / partner", icon: "🏢" },
-];
+    { value: "salaried", label: "Salaried", desc: "Full-time employee", icon: Briefcase },
+    { value: "self_employed", label: "Self-Employed", desc: "Freelancer / consultant", icon: Laptop },
+    { value: "business", label: "Business Owner", desc: "Proprietor / partner", icon: Building2 },
+  ];
 
 export function StepIncome({ form, onChange }: Props) {
   const annualGross = Number(form.annual_gross_income) || 0;
@@ -29,7 +34,6 @@ export function StepIncome({ form, onChange }: Props) {
     ? `≈ ₹${Math.round(annualGross / 12).toLocaleString("en-IN")}/mo`
     : null;
 
-  // Derive income band label for context
   let incomeBand = "";
   if (annualGross > 0 && annualGross <= 7_00_000)
     incomeBand = "Low tax bracket — likely ₹0 under new regime";
@@ -42,9 +46,10 @@ export function StepIncome({ form, onChange }: Props) {
 
   return (
     <div className="space-y-6">
-      {/* FY label */}
+      {/* FY chip */}
       <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-semibold">
-        📅 {FY_LABEL}
+        <Calendar className="h-3 w-3" />
+        {FY_LABEL}
       </div>
 
       {/* Age + City */}
@@ -63,8 +68,9 @@ export function StepIncome({ form, onChange }: Props) {
             onChange={(e) => onChange({ age: e.target.value })}
           />
           {Number(form.age) >= 60 && (
-            <p className="text-xs text-amber-600 font-medium">
-              ℹ️ Senior citizen — 80D limit auto-set to ₹50,000
+            <p className="flex items-center gap-1.5 text-xs text-warning font-medium">
+              <Info className="h-3 w-3 shrink-0" />
+              Senior citizen — 80D limit auto-set to ₹50,000
             </p>
           )}
         </div>
@@ -88,6 +94,7 @@ export function StepIncome({ form, onChange }: Props) {
         </Label>
         <div className="grid grid-cols-3 gap-2">
           {EMPLOYMENT_OPTIONS.map((opt) => {
+            const Icon = opt.icon;
             const isSelected = form.employment_type === opt.value;
             return (
               <button
@@ -95,28 +102,38 @@ export function StepIncome({ form, onChange }: Props) {
                 type="button"
                 onClick={() => onChange({ employment_type: opt.value })}
                 className={cn(
-                  "flex flex-col items-center gap-1 p-3 rounded-xl border-2 text-center transition-all",
+                  "flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 text-center transition-all",
                   isSelected
                     ? "border-primary bg-primary/5 text-primary"
                     : "border-border hover:border-primary/40 text-muted-foreground"
                 )}
               >
-                <span className="text-xl">{opt.icon}</span>
+                <div className={cn(
+                  "h-8 w-8 rounded-lg flex items-center justify-center",
+                  isSelected ? "bg-primary/10" : "bg-muted"
+                )}>
+                  <Icon className={cn("h-4 w-4", isSelected ? "text-primary" : "text-muted-foreground")} />
+                </div>
                 <span className={cn(
                   "font-semibold text-xs",
                   isSelected ? "text-primary" : "text-foreground"
                 )}>
                   {opt.label}
                 </span>
-                <span className="text-[10px] opacity-70 leading-tight">{opt.desc}</span>
+                <span className="text-[10px] text-muted-foreground opacity-70 leading-tight">
+                  {opt.desc}
+                </span>
               </button>
             );
           })}
         </div>
         {form.employment_type !== "salaried" && (
-          <p className="text-xs text-muted-foreground bg-muted px-3 py-2 rounded-lg">
-            ℹ️ HRA deduction is not available for self-employed / business owners
-          </p>
+          <div className="flex items-start gap-2 bg-muted px-3 py-2 rounded-lg">
+            <Info className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
+            <p className="text-xs text-muted-foreground">
+              HRA deduction is not available for self-employed / business owners
+            </p>
+          </div>
         )}
       </div>
 
@@ -146,12 +163,14 @@ export function StepIncome({ form, onChange }: Props) {
         {annualGross > 0 && (
           <div className="flex flex-wrap items-center gap-2 mt-2">
             {monthlyEquiv && (
-              <div className="inline-flex items-center gap-1 px-3 py-1 bg-muted rounded-full text-xs text-muted-foreground">
-                📆 {monthlyEquiv}
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-muted rounded-full text-xs text-muted-foreground">
+                <CalendarDays className="h-3 w-3" />
+                {monthlyEquiv}
               </div>
             )}
-            <div className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
-              💡 {incomeBand}
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
+              <Lightbulb className="h-3 w-3" />
+              {incomeBand}
             </div>
           </div>
         )}

@@ -8,7 +8,7 @@ interface Props {
   avgRetirementYears: number; // pass from form
 }
 
-export function SipSplit({ result, nameA, nameB, avgRetirementYears }: Props) {
+export function SipSplit({ result, nameA, nameB, avgRetirementYears }: Readonly<Props>) {
   const { partner_a_sip, partner_b_sip } = result;
   const total = partner_a_sip + partner_b_sip;
   if (total <= 0) return null;
@@ -61,7 +61,7 @@ export function SipSplit({ result, nameA, nameB, avgRetirementYears }: Props) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-1.5">
-                    <div className={cn("h-2.5 w-2.5 rounded-sm flex-shrink-0", r.color)} />
+                    <div className={cn("h-2.5 w-2.5 rounded-sm shrink-0", r.color)} />
                     <span className="text-xs font-medium text-foreground">{r.name}</span>
                   </div>
                   <span className="text-xs text-muted-foreground">{r.pct.toFixed(0)}%</span>
@@ -74,7 +74,7 @@ export function SipSplit({ result, nameA, nameB, avgRetirementYears }: Props) {
                 </div>
               </div>
               {/* Amount */}
-              <div className="flex-shrink-0 text-right w-28">
+              <div className="shrink-0 text-right w-28">
                 <p className="text-sm font-bold text-foreground">{fmt(r.sip)}</p>
                 <p className="text-[11px] text-muted-foreground">/month</p>
               </div>
@@ -85,7 +85,7 @@ export function SipSplit({ result, nameA, nameB, avgRetirementYears }: Props) {
         {/* Corpus projection */}
         {corpus > 0 && avgRetirementYears > 0 && (
           <div className="flex items-center gap-3 px-4 py-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-xl">
-            <span className="text-xl flex-shrink-0">🎯</span>
+            <span className="text-xl shrink-0">🎯</span>
             <div>
               <p className="text-xs font-semibold text-green-800 dark:text-green-200">
                 Projected corpus in {avgRetirementYears} years @ 12% CAGR

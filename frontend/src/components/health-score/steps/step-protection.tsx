@@ -14,12 +14,12 @@ interface Props {
 
 function ToggleRow({
   value, onChange, label, children,
-}: {
+}: Readonly<{
   value: boolean;
   onChange: (v: boolean) => void;
   label: string;
   children?: React.ReactNode;
-}) {
+}>) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
@@ -47,7 +47,7 @@ function ToggleRow({
   );
 }
 
-export function StepProtection({ form, onChange }: Props) {
+export function StepProtection({ form, onChange }: Readonly<Props>) {
   const income = Number(form.monthly_gross_income) || 0;
   const recommendedTermCover = income * 12 * 10;
 
@@ -59,7 +59,7 @@ export function StepProtection({ form, onChange }: Props) {
     <div className="space-y-6">
       {/* Info banner */}
       <div className="flex items-start gap-3 p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-xl">
-        <AlertCircle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
+        <AlertCircle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
         <p className="text-xs text-amber-800 dark:text-amber-300">
           Insurance gaps are the most common reason for a low score. This section is quick and has a big impact.
         </p>

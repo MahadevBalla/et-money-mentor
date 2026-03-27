@@ -2,7 +2,10 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2, ChevronDown, ChevronUp, Info } from "lucide-react";
+import {
+  Plus, Trash2, ChevronDown, ChevronUp, Info,
+  Home, GraduationCap, Gem, Plane, Target, Pin, LucideIcon
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -29,13 +32,13 @@ const TAX_FIELDS: {
   { key: "other_deductions",  label: "Other Deductions",       hint: "Any other deductions"                      },
 ];
 
-const GOAL_TYPES: { value: GoalType; label: string }[] = [
-  { value: "house",      label: "🏠 House"      },
-  { value: "education",  label: "🎓 Education"  },
-  { value: "marriage",   label: "💍 Marriage"   },
-  { value: "retirement", label: "🏖 Retirement" },
-  { value: "vacation",   label: "✈️ Vacation"   },
-  { value: "custom",     label: "📌 Custom"     },
+const GOAL_TYPES: { value: GoalType; icon: LucideIcon; label: string }[] = [
+  { value: "house", icon: Home, label: "House" },
+  { value: "education", icon: GraduationCap, label: "Education" },
+  { value: "marriage", icon: Gem, label: "Marriage" },
+  { value: "retirement", icon: Target, label: "Retirement" },
+  { value: "vacation", icon: Plane, label: "Vacation" },
+  { value: "custom", icon: Pin, label: "Custom" },
 ];
 
 function emptyGoal(): Goal {
@@ -47,7 +50,7 @@ function emptyGoal(): Goal {
   };
 }
 
-export function StepTaxGoals({ form, onChange }: Props) {
+export function StepTaxGoals({ form, onChange }: Readonly<Props>) {
   const [taxExpanded, setTaxExpanded] = useState(true);
   const [goalsExpanded, setGoalsExpanded] = useState(false);
 
@@ -60,10 +63,7 @@ export function StepTaxGoals({ form, onChange }: Props) {
     });
   }
 
-  function addGoal() {
-    onChange({ goals: [...form.goals, emptyGoal()] });
-  }
-
+  function addGoal() { onChange({ goals: [...form.goals, emptyGoal()] }); }
   function removeGoal(idx: number) {
     onChange({ goals: form.goals.filter((_, i) => i !== idx) });
   }
@@ -78,21 +78,21 @@ export function StepTaxGoals({ form, onChange }: Props) {
     <div className="space-y-4">
       {/* Skip hint */}
       <div className="flex items-start gap-2 p-3 bg-muted rounded-xl">
-        <Info className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+        <Info className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
         <p className="text-xs text-muted-foreground">
-          This step is optional. Skipping will still give you a valid score — our AI will flag any missing deductions as opportunities.
+          This step is optional. Skipping will still give you a valid score — our AI will flag
+          any missing deductions as opportunities.
         </p>
       </div>
 
       {/* Tax Section */}
       <div className="border border-border rounded-xl overflow-hidden">
-        <button
-          type="button"
-          onClick={() => setTaxExpanded(!taxExpanded)}
-          className="w-full flex items-center justify-between px-4 py-3 bg-muted/50 hover:bg-muted transition-colors"
-        >
+        <button type="button" onClick={() => setTaxExpanded(!taxExpanded)}
+          className="w-full flex items-center justify-between px-4 py-3 bg-muted/50 hover:bg-muted transition-colors">
           <span className="text-sm font-semibold">Tax Deductions (FY 2024-25)</span>
-          {taxExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+          {taxExpanded
+            ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
+            : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
         </button>
 
         {taxExpanded && (
@@ -119,7 +119,9 @@ export function StepTaxGoals({ form, onChange }: Props) {
                     {hint}{max ? ` · Max ₹${max.toLocaleString("en-IN")}` : ""}
                   </p>
                   {max && (Number(form.tax_deductions[key]) || 0) > max && (
-                    <p className="text-xs text-destructive">Exceeds limit of ₹{max.toLocaleString("en-IN")}</p>
+                    <p className="text-xs text-destructive">
+                      Exceeds limit of ₹{max.toLocaleString("en-IN")}
+                    </p>
                   )}
                 </div>
               ))}
@@ -136,7 +138,7 @@ export function StepTaxGoals({ form, onChange }: Props) {
                   <div
                     className={cn(
                       "h-full rounded-full transition-all duration-500",
-                      total80C >= 150000 ? "bg-green-500" : "bg-primary"
+                      total80C >= 150000 ? "bg-success" : "bg-primary"
                     )}
                     style={{ width: `${Math.min((total80C / 150000) * 100, 100)}%` }}
                   />
@@ -150,22 +152,23 @@ export function StepTaxGoals({ form, onChange }: Props) {
                 { key: "section_80d_self_is_senior" as const, label: "I am a senior citizen (≥60 yrs)" },
                 { key: "section_80d_parents_are_senior" as const, label: "My parents are senior citizens" },
               ].map(({ key, label }) => (
-                <button
-                  key={key}
-                  type="button"
+                <button key={key} type="button"
                   onClick={() => patchTax(key, !form.tax_deductions[key])}
                   className={cn(
                     "flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium transition-all",
                     form.tax_deductions[key]
                       ? "border-primary bg-primary/10 text-primary"
                       : "border-border text-muted-foreground hover:border-primary/40"
-                  )}
-                >
+                  )}>
                   <span className={cn(
                     "h-3.5 w-3.5 rounded-sm border flex items-center justify-center",
                     form.tax_deductions[key] ? "border-primary bg-primary" : "border-current"
                   )}>
-                    {form.tax_deductions[key] && <span className="text-white text-[8px] leading-none">✓</span>}
+                    {form.tax_deductions[key] && (
+                      <svg className="h-2 w-2 text-white" fill="none" viewBox="0 0 12 12">
+                        <path d="M10 3L5 8.5 2 5.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+                      </svg>
+                    )}
                   </span>
                   {label}
                 </button>
@@ -177,16 +180,15 @@ export function StepTaxGoals({ form, onChange }: Props) {
 
       {/* Goals section */}
       <div className="border border-border rounded-xl overflow-hidden">
-        <button
-          type="button"
-          onClick={() => setGoalsExpanded(!goalsExpanded)}
-          className="w-full flex items-center justify-between px-4 py-3 bg-muted/50 hover:bg-muted transition-colors"
-        >
+        <button type="button" onClick={() => setGoalsExpanded(!goalsExpanded)}
+          className="w-full flex items-center justify-between px-4 py-3 bg-muted/50 hover:bg-muted transition-colors">
           <div className="text-left">
             <span className="text-sm font-semibold">Financial Goals</span>
             <span className="text-xs text-muted-foreground ml-2">optional</span>
           </div>
-          {goalsExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+          {goalsExpanded
+            ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
+            : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
         </button>
 
         {goalsExpanded && (
@@ -194,28 +196,33 @@ export function StepTaxGoals({ form, onChange }: Props) {
             {form.goals.map((goal, idx) => (
               <div key={idx} className="border border-border rounded-xl p-4 space-y-3 bg-card">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Goal {idx + 1}</span>
-                  <button type="button" onClick={() => removeGoal(idx)} className="text-muted-foreground hover:text-destructive transition-colors">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    Goal {idx + 1}
+                  </span>
+                  <button type="button" onClick={() => removeGoal(idx)}
+                    className="text-muted-foreground hover:text-destructive transition-colors">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
 
                 <div className="flex flex-wrap gap-1.5">
-                  {GOAL_TYPES.map((gt) => (
-                    <button
-                      key={gt.value}
-                      type="button"
-                      onClick={() => patchGoal(idx, { type: gt.value })}
-                      className={cn(
-                        "px-2.5 py-1 rounded-full text-xs font-medium border transition-all",
-                        goal.type === gt.value
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border text-muted-foreground hover:border-primary/40"
-                      )}
-                    >
-                      {gt.label}
-                    </button>
-                  ))}
+                  {GOAL_TYPES.map((gt) => {
+                    const Icon = gt.icon;
+                    const isSelected = goal.type === gt.value;
+                    return (
+                      <button key={gt.value} type="button"
+                        onClick={() => patchGoal(idx, { type: gt.value })}
+                        className={cn(
+                          "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all",
+                          isSelected
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border text-muted-foreground hover:border-primary/40"
+                        )}>
+                        <Icon className="h-3 w-3 shrink-0" />
+                        <span>{gt.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -223,26 +230,21 @@ export function StepTaxGoals({ form, onChange }: Props) {
                     <Label className="text-xs">Target Amount (₹)</Label>
                     <div className="relative">
                       <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">₹</span>
-                      <Input
-                        type="number" placeholder="1,00,00,000" className="pl-5 h-9 text-sm"
+                      <Input type="number" placeholder="1,00,00,000" className="pl-5 h-9 text-sm"
                         value={goal.target_amount === 0 ? "" : goal.target_amount}
-                        onChange={(e) => patchGoal(idx, { target_amount: Number(e.target.value) || 0 })}
-                      />
+                        onChange={(e) => patchGoal(idx, { target_amount: Number(e.target.value) || 0 })} />
                     </div>
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">Target Year</Label>
-                    <Input
-                      type="number" placeholder="2030" className="h-9 text-sm"
+                    <Input type="number" placeholder="2030" className="h-9 text-sm"
                       min={new Date().getFullYear() + 1} max={2075}
                       value={goal.target_year}
-                      onChange={(e) => patchGoal(idx, { target_year: Number(e.target.value) || 2030 })}
-                    />
+                      onChange={(e) => patchGoal(idx, { target_year: Number(e.target.value) || 2030 })} />
                   </div>
                 </div>
               </div>
             ))}
-
             <Button type="button" variant="outline" size="sm" onClick={addGoal} className="w-full">
               <Plus className="h-4 w-4 mr-1.5" /> Add a goal
             </Button>

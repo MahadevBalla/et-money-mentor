@@ -43,7 +43,7 @@ function emptyDebt(): DebtItem {
   return { name: "Home Loan", outstanding: 0, emi: 0, interest_rate: 8.5, is_secured: true };
 }
 
-export function StepMoney({ form, onChange }: Props) {
+export function StepMoney({ form, onChange }: Readonly<Props>) {
   const [assetsExpanded, setAssetsExpanded] = useState(false);
   const [hasDebts, setHasDebts] = useState(form.debts.length > 0);
 

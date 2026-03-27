@@ -10,7 +10,7 @@ interface Props {
   monthlyInvestable: number;
 }
 
-export function SIPCards({ result, monthlyInvestable }: Props) {
+export function SIPCards({ result, monthlyInvestable }: Readonly<Props>) {
   const fmt = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
 
   const flatSIP   = result.required_monthly_sip;
@@ -45,9 +45,9 @@ export function SIPCards({ result, monthlyInvestable }: Props) {
         <div
           className={cn(
             "rounded-xl border-2 p-5 space-y-3 relative overflow-hidden",
-            !recommendStepup
-              ? "border-primary bg-primary/5"
-              : "border-border bg-card"
+            recommendStepup
+              ? "border-border bg-card"
+              : "border-primary bg-primary/5"
           )}
         >
           {!recommendStepup && (
@@ -111,7 +111,7 @@ export function SIPCards({ result, monthlyInvestable }: Props) {
       {/* Step-up benefit explainer */}
       {recommendStepup && savingsByStepup > 0 && (
         <div className="flex items-start gap-2.5 px-4 py-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-xl">
-          <Info className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+          <Info className="h-4 w-4 text-green-600 shrink-0 mt-0.5" />
           <p className="text-xs text-green-800 dark:text-green-200">
             <strong>Step-up saves you {fmt(savingsByStepup)}/mo to start.</strong> As your
             income grows each year, your SIP grows too — easier on your current
@@ -122,7 +122,7 @@ export function SIPCards({ result, monthlyInvestable }: Props) {
 
       {/* Retirement expense info */}
       <div className="flex items-start gap-2.5 px-4 py-3 bg-muted rounded-xl">
-        <Info className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+        <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
         <p className="text-xs text-muted-foreground">
           At retirement you&apos;ll need approximately{" "}
           <strong className="text-foreground">

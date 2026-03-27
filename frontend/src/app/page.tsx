@@ -133,7 +133,7 @@ export default function Home() {
                     className="group p-6 rounded-lg border border-border hover:border-primary/50 bg-muted/30 hover:bg-muted/60 transition-all duration-300"
                   >
                     <div className="flex items-start gap-4">
-                      <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors">
+                      <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
                         <Icon className="h-6 w-6 text-primary" />
                       </div>
                       <div className="space-y-2">

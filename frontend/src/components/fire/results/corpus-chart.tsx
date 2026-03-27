@@ -17,7 +17,7 @@ function formatCrore(n: number): string {
   return `₹${n.toLocaleString("en-IN")}`;
 }
 
-export function CorpusChart({ projections, targetAge, fiAge }: Props) {
+export function CorpusChart({ projections, targetAge, fiAge }: Readonly<Props>) {
   const [hovered, setHovered] = useState<number | null>(null);
 
   if (!projections || projections.length === 0) {
@@ -80,10 +80,10 @@ export function CorpusChart({ projections, targetAge, fiAge }: Props) {
   }
 
   // Hover point
-  const hoveredPoint = hovered !== null ? projections[hovered] : null;
+  const hoveredPoint = hovered === null ? null : projections[hovered];
 
   // FIRE age vertical line
-  const fireAgeX = fiAge !== null ? xPos(fiAge) : null;
+  const fireAgeX = fiAge === null ? null : xPos(fiAge);
   const targetAgeX = xPos(targetAge);
 
   return (

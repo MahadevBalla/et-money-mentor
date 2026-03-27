@@ -91,7 +91,7 @@ export function AppShell({ children }: AppShellProps) {
         )}
       >
         {/* Logo — unchanged */}
-        <div className="flex items-center gap-2.5 h-16 px-5 border-b border-border flex-shrink-0">
+        <div className="flex items-center gap-2.5 h-16 px-5 border-b border-border shrink-0">
           <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center">
             <Sparkles className="size-4 text-primary" />
           </div>
@@ -154,7 +154,7 @@ export function AppShell({ children }: AppShellProps) {
                     {/* ── Icon ── */}
                     <Icon
                       className={cn(
-                        "relative z-10 h-4 w-4 flex-shrink-0 transition-colors duration-150",
+                        "relative z-10 h-4 w-4 shrink-0 transition-colors duration-150",
                         active
                           ? "text-primary"
                           : "text-muted-foreground group-hover:text-foreground"
@@ -180,7 +180,7 @@ export function AppShell({ children }: AppShellProps) {
         </nav>
 
         {/* Footer */}
-        <div className="border-t border-border px-3 py-3 flex-shrink-0 space-y-1">
+        <div className="border-t border-border px-3 py-3 shrink-0 space-y-1">
 
           {/* ── Settings link — now animated like nav items ── */}
           {(() => {
@@ -221,7 +221,7 @@ export function AppShell({ children }: AppShellProps) {
 
                 <Settings
                   className={cn(
-                    "relative z-10 h-4 w-4 flex-shrink-0 transition-colors duration-150",
+                    "relative z-10 h-4 w-4 shrink-0 transition-colors duration-150",
                     active
                       ? "text-primary"
                       : "text-muted-foreground group-hover:text-foreground"
@@ -258,7 +258,7 @@ export function AppShell({ children }: AppShellProps) {
 
       {/* Main content — unchanged */}
       <div className="flex-1 flex flex-col min-w-0 lg:ml-60">
-        <header className="flex items-center h-16 px-4 border-b border-border bg-card lg:hidden flex-shrink-0">
+        <header className="flex items-center h-16 px-4 border-b border-border bg-card lg:hidden shrink-0">
           <button
             className="p-2 text-muted-foreground hover:text-foreground"
             onClick={() => setSidebarOpen(true)}
