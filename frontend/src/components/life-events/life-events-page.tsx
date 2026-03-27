@@ -208,7 +208,7 @@ export function LifeEventsPage() {
     setLoading(true);
     try {
       const payload = buildLifeEventPayload(form);
-      const res     = await getLifeEventPlan(payload as Record<string, unknown>);
+      const res     = await getLifeEventPlan(payload as unknown as Record<string, unknown>);
       setResult(res as unknown as LifeEventApiResponse);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
