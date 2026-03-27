@@ -2,15 +2,10 @@ import type { Metadata } from "next";
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import { ThemeProvider as MUIThemeProvider } from '@mui/material/styles';
 import { ThemeProvider as NextThemesProvider } from "next-themes";
-import { Inter } from "next/font/google";
 import { Bricolage_Grotesque } from "next/font/google";
 import theme from "@/theme";
 import "./globals.css";
 
-const inter = Inter({ 
-  subsets: ["latin"],
-  variable: "--font-inter", // Optional: for CSS variables
-})
 const bricolage = Bricolage_Grotesque({ 
   subsets: ["latin"],
   display: 'swap',

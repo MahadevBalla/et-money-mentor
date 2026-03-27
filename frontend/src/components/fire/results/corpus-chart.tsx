@@ -91,7 +91,7 @@ export function CorpusChart({ projections, targetAge, fiAge }: Props) {
       {/* Legend */}
       <div className="flex items-center gap-5 text-xs text-muted-foreground">
         <div className="flex items-center gap-1.5">
-          <div className="h-0.5 w-6 bg-[hsl(var(--primary))] rounded" />
+          <div className="h-0.5 w-6 bg-[var(--primary)] rounded" />
           <span>Projected Corpus</span>
         </div>
         <div className="flex items-center gap-1.5">
@@ -116,8 +116,8 @@ export function CorpusChart({ projections, targetAge, fiAge }: Props) {
         >
           <defs>
             <linearGradient id="corpusGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.25" />
-              <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.02" />
+              <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.25" />
+              <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.02" />
             </linearGradient>
           </defs>
 
@@ -129,7 +129,7 @@ export function CorpusChart({ projections, targetAge, fiAge }: Props) {
               y1={y}
               x2={W - PAD.right}
               y2={y}
-              stroke="hsl(var(--border))"
+              stroke="var(--border)"
               strokeWidth="1"
             />
           ))}
@@ -142,7 +142,7 @@ export function CorpusChart({ projections, targetAge, fiAge }: Props) {
               y={y + 4}
               textAnchor="end"
               fontSize="10"
-              fill="hsl(var(--muted-foreground))"
+              fill="var(--muted-foreground)"
             >
               {formatCrore(value)}
             </text>
@@ -156,7 +156,7 @@ export function CorpusChart({ projections, targetAge, fiAge }: Props) {
               y={H - PAD.bottom + 16}
               textAnchor="middle"
               fontSize="10"
-              fill="hsl(var(--muted-foreground))"
+              fill="var(--muted-foreground)"
             >
               {age}
             </text>
@@ -168,7 +168,7 @@ export function CorpusChart({ projections, targetAge, fiAge }: Props) {
             y={H - 4}
             textAnchor="middle"
             fontSize="10"
-            fill="hsl(var(--muted-foreground))"
+            fill="var(--muted-foreground)"
           >
             Age
           </text>
@@ -179,7 +179,7 @@ export function CorpusChart({ projections, targetAge, fiAge }: Props) {
             y1={PAD.top}
             x2={targetAgeX}
             y2={PAD.top + chartH}
-            stroke="hsl(var(--muted-foreground))"
+            stroke="var(--muted-foreground)"
             strokeWidth="1"
             strokeDasharray="4 4"
             opacity="0.5"
@@ -188,7 +188,7 @@ export function CorpusChart({ projections, targetAge, fiAge }: Props) {
             x={targetAgeX + 3}
             y={PAD.top + 12}
             fontSize="9"
-            fill="hsl(var(--muted-foreground))"
+            fill="var(--muted-foreground)"
           >
             Target {targetAge}
           </text>
@@ -223,7 +223,7 @@ export function CorpusChart({ projections, targetAge, fiAge }: Props) {
           <path
             d={investedPath}
             fill="none"
-            stroke="hsl(var(--muted-foreground))"
+            stroke="var(--muted-foreground)"
             strokeWidth="1.5"
             strokeDasharray="5 4"
             opacity="0.5"
@@ -233,7 +233,7 @@ export function CorpusChart({ projections, targetAge, fiAge }: Props) {
           <path
             d={corpusPath}
             fill="none"
-            stroke="hsl(var(--primary))"
+            stroke="var(--primary)"
             strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -260,13 +260,13 @@ export function CorpusChart({ projections, targetAge, fiAge }: Props) {
                 cx={xPos(hoveredPoint.age)}
                 cy={yPos(hoveredPoint.corpus)}
                 r="5"
-                fill="hsl(var(--primary))"
+                fill="var(--primary)"
               />
               <circle
                 cx={xPos(hoveredPoint.age)}
                 cy={yPos(hoveredPoint.invested)}
                 r="4"
-                fill="hsl(var(--muted-foreground))"
+                fill="var(--muted-foreground)"
                 opacity="0.6"
               />
               {/* Tooltip box */}
@@ -283,8 +283,8 @@ export function CorpusChart({ projections, targetAge, fiAge }: Props) {
                       width={boxW}
                       height={68}
                       rx="6"
-                      fill="hsl(var(--card))"
-                      stroke="hsl(var(--border))"
+                      fill="var(--card)"
+                      stroke="var(--border)"
                       strokeWidth="1"
                     />
                     <text
@@ -292,7 +292,7 @@ export function CorpusChart({ projections, targetAge, fiAge }: Props) {
                       y={PAD.top + 20}
                       fontSize="11"
                       fontWeight="600"
-                      fill="hsl(var(--foreground))"
+                      fill="var(--foreground)"
                     >
                       Age {hoveredPoint.age} · {hoveredPoint.year}
                     </text>
@@ -300,7 +300,7 @@ export function CorpusChart({ projections, targetAge, fiAge }: Props) {
                       x={boxX + 10}
                       y={PAD.top + 36}
                       fontSize="10"
-                      fill="hsl(var(--primary))"
+                      fill="var(--primary)"
                     >
                       Corpus: {formatCrore(hoveredPoint.corpus)}
                     </text>
@@ -308,7 +308,7 @@ export function CorpusChart({ projections, targetAge, fiAge }: Props) {
                       x={boxX + 10}
                       y={PAD.top + 50}
                       fontSize="10"
-                      fill="hsl(var(--muted-foreground))"
+                      fill="var(--muted-foreground)"
                     >
                       Invested: {formatCrore(hoveredPoint.invested)}
                     </text>
@@ -316,7 +316,7 @@ export function CorpusChart({ projections, targetAge, fiAge }: Props) {
                       x={boxX + 10}
                       y={PAD.top + 64}
                       fontSize="10"
-                      fill="hsl(var(--muted-foreground))"
+                      fill="var(--muted-foreground)"
                     >
                       SIP: {formatCrore(hoveredPoint.sip)}/mo
                     </text>
