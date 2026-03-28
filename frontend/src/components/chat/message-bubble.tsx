@@ -6,10 +6,10 @@ import { Bot, User, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ChatMessage } from "@/lib/chat";
 
-// ── Typing dots ──────────────────────────────────────────────────────────────
+// ── Typing dots — shown before first token arrives ────────────────────────────
 function TypingDots() {
   return (
-    <div className="flex items-center gap-1 py-0.5">
+    <div className="flex items-center gap-1 py-0.5 h-5">
       {[0, 1, 2].map((i) => (
         <motion.span
           key={i}
@@ -27,7 +27,19 @@ function TypingDots() {
   );
 }
 
-// ── Timestamp ────────────────────────────────────────────────────────────────
+// ── Blinking cursor — shown while tokens are streaming in ─────────────────────
+// Uses --primary from globals.css (teal oklch token) — no hardcoded colour
+function StreamingCursor() {
+  return (
+    <motion.span
+      className="inline-block w-[2px] h-[1em] bg-primary align-middle ml-[2px] rounded-sm"
+      animate={{ opacity: [1, 0, 1] }}
+      transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut" }}
+    />
+  );
+}
+
+// ── Timestamp ──────────────────────────────────────────────────────────────────
 function Timestamp({ date }: { date: Date }) {
   return (
     <span className="text-[10px] text-muted-foreground/60 mt-1 px-1 select-none">
@@ -36,9 +48,16 @@ function Timestamp({ date }: { date: Date }) {
   );
 }
 
-// ── Main bubble ──────────────────────────────────────────────────────────────
+// ── Main bubble ────────────────────────────────────────────────────────────────
 export function MessageBubble({ message }: { message: ChatMessage }) {
   const isUser = message.role === "user";
+
+  // isLoading=true + isStreaming=false  → dots (waiting for first token)
+  // isLoading=false + isStreaming=true  → content + blinking cursor
+  // isLoading=false + isStreaming=false → final content, show timestamp
+  const showDots   = !!message.isLoading && !message.isStreaming;
+  const showCursor = !!message.isStreaming && !message.isLoading;
+  const showTime   = !message.isLoading && !message.isStreaming;
 
   return (
     <motion.div
@@ -83,7 +102,7 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
               : "bg-muted text-foreground rounded-tl-sm"
           )}
         >
-          {message.isLoading ? (
+          {showDots ? (
             <TypingDots />
           ) : message.isError ? (
             <span className="flex items-center gap-1.5">
@@ -91,14 +110,14 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
               {message.content}
             </span>
           ) : (
-            // Preserve newlines from AI response
-            <p className="whitespace-pre-wrap break-words">{message.content}</p>
+            <p className="whitespace-pre-wrap break-words">
+              {message.content}
+              {showCursor && <StreamingCursor />}
+            </p>
           )}
         </div>
 
-        {!message.isLoading && (
-          <Timestamp date={message.timestamp} />
-        )}
+        {showTime && <Timestamp date={message.timestamp} />}
       </div>
     </motion.div>
   );
