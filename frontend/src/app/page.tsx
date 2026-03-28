@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs } from '@/components/ui/vercel-tabs';
 import { ScrollAnimatedText } from '@/components/ui/text-scroll-animation';
 import { Sparkles, ArrowRight, Heart, Flame, DollarSign, TrendingUp } from 'lucide-react';
+import { HeroBackground } from "@/components/ui/shape-landing-hero";
 
 const TAB_ITEMS = [
   { id: 'features', label: 'Features' },
@@ -41,6 +42,8 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted">
+      {/* <HeroBackground /> */}
+
       {/* Navigation */}
       <nav className="sticky top-0 z-50 border-b border-border/40 backdrop-blur-md bg-background/80">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
