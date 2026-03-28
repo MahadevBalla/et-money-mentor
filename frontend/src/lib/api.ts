@@ -41,11 +41,8 @@ class ApiService {
     const url = `${this.baseURL}${endpoint}`;
     const { body, ...requestOptions } = options;
 
-    const config: RequestInit = {
-      ...requestOptions,
-    };
+    const config: RequestInit = { ...requestOptions };
 
-    // Only set JSON headers and body if we have data to send
     if (body !== undefined) {
       config.headers = {
         "Content-Type": "application/json",
@@ -53,20 +50,23 @@ class ApiService {
       };
       config.body = JSON.stringify(body);
     } else {
-      config.headers = {
-        ...options.headers,
-      };
+      config.headers = { ...options.headers };
     }
 
     try {
       console.log("🌐 Making API request:", {
-        method: config.method || 'GET',
+        method: config.method || "GET",
         url,
         headers: config.headers,
         body: config.body,
       });
 
       const response = await fetch(url, config);
+
+      // ── 204 / 205 — no body, return early ──────────────────────────────
+      if (response.status === 204 || response.status === 205) {
+        return undefined as T;
+      }
 
       // Handle different content types
       let data;
@@ -78,23 +78,15 @@ class ApiService {
       }
 
       if (!response.ok) {
-        // Try to parse error response
         let errorData: ApiErrorResponse;
-
         if (typeof data === "object" && data !== null) {
-          // Handle different error response formats from FastAPI
           if (data.error) {
-            // Format: { error: string, code: string }
             errorData = data;
           } else if (data.detail) {
-            // FastAPI validation error format: { detail: string | object }
             const detail = data.detail;
             if (typeof detail === "object" && detail !== null && "error" in detail) {
               const detailObj = detail as { error: string; code?: string };
-              errorData = {
-                error: detailObj.error,
-                code: detailObj.code ?? "HTTP_ERROR",
-              };
+              errorData = { error: detailObj.error, code: detailObj.code ?? "HTTP_ERROR" };
             } else {
               errorData = {
                 error: typeof detail === "string" ? detail : JSON.stringify(detail),
@@ -102,14 +94,9 @@ class ApiService {
               };
             }
           } else {
-            // Generic object error
-            errorData = {
-              error: JSON.stringify(data),
-              code: "HTTP_ERROR",
-            };
+            errorData = { error: JSON.stringify(data), code: "HTTP_ERROR" };
           }
         } else {
-          // String or other data type
           errorData = {
             error: data || "Unknown error occurred",
             code: "HTTP_ERROR",
@@ -120,11 +107,7 @@ class ApiService {
 
       return data;
     } catch (error) {
-      if (error instanceof ApiException) {
-        throw error;
-      }
-
-      // Handle network errors
+      if (error instanceof ApiException) throw error;
       throw new ApiException(0, {
         error: error instanceof Error ? error.message : "Network error",
         code: "NETWORK_ERROR",

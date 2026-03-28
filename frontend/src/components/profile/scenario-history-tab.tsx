@@ -5,6 +5,7 @@ import {
   HeartPulse, Flame, Receipt, CalendarHeart,
   Users2, ScanLine, Trash2, ExternalLink,
   ChevronDown, ChevronUp, Loader2, RefreshCw,
+  CheckCircle2, XCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -13,6 +14,49 @@ import {
   type ScenarioSummary, type ScenarioDetail,
 } from "@/lib/portfolio";
 import { ScenarioDetailDrawer } from "./scenario-detail-drawer";
+
+// ─── Inline Toast ─────────────────────────────────────────────────────────────
+
+interface Toast {
+  id:      number;
+  type:    "success" | "error";
+  message: string;
+}
+
+function ToastContainer({ toasts, onDismiss }: {
+  toasts:    Toast[];
+  onDismiss: (id: number) => void;
+}) {
+  if (toasts.length === 0) return null;
+  return (
+    <div className="fixed bottom-5 right-5 z-[60] flex flex-col gap-2 pointer-events-none">
+      {toasts.map((t) => (
+        <div
+          key={t.id}
+          className={cn(
+            "flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg border text-sm font-medium pointer-events-auto",
+            "animate-in slide-in-from-bottom-2 fade-in duration-200",
+            t.type === "success"
+              ? "bg-green-50 border-green-200 text-green-800 dark:bg-green-950/60 dark:border-green-800 dark:text-green-300"
+              : "bg-red-50 border-red-200 text-red-800 dark:bg-red-950/60 dark:border-red-800 dark:text-red-300"
+          )}
+        >
+          {t.type === "success"
+            ? <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+            : <XCircle      className="h-4 w-4 flex-shrink-0" />}
+          <span>{t.message}</span>
+          <button
+            type="button"
+            onClick={() => onDismiss(t.id)}
+            className="ml-1 opacity-60 hover:opacity-100 transition-opacity"
+          >
+            ✕
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 // ─── Feature config ───────────────────────────────────────────────────────────
 
@@ -120,7 +164,10 @@ function ScenarioCard({
   const Icon = meta.icon;
 
   return (
-    <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-border bg-card hover:border-primary/30 transition-colors">
+    <div className={cn(
+      "flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-border bg-card hover:border-primary/30 transition-all duration-200",
+      isDeleting && "opacity-50 scale-[0.99]"
+    )}>
       <div className="flex items-center gap-3 min-w-0">
         <div className={cn("h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0", meta.color)}>
           <Icon className="h-4 w-4" />
@@ -141,7 +188,8 @@ function ScenarioCard({
         <button
           type="button"
           onClick={() => onView(scenario)}
-          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-foreground hover:bg-muted transition-colors"
+          disabled={isDeleting}
+          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-40"
           title="View details"
         >
           <ExternalLink className="h-3.5 w-3.5" />
@@ -163,8 +211,9 @@ function ScenarioCard({
           title="Delete"
         >
           {isDeleting
-            ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ? <Loader2 className="h-3.5 w-3.5 animate-spin text-destructive" />
             : <Trash2  className="h-3.5 w-3.5" />}
+          {isDeleting && <span className="hidden sm:inline text-destructive">Deleting…</span>}
         </button>
       </div>
     </div>
@@ -256,13 +305,30 @@ function EmptyState() {
 
 // ─── Main tab component ───────────────────────────────────────────────────────
 
+let _toastId = 0;
+
 export function ScenarioHistoryTab() {
-  const [scenarios,   setScenarios  ] = useState<ScenarioSummary[]>([]);
-  const [loading,     setLoading    ] = useState(true);
-  const [error,       setError      ] = useState("");
-  const [deletingId,  setDeletingId ] = useState<string | null>(null);
-  const [drawerScene, setDrawerScene] = useState<ScenarioDetail | null>(null);
+  const [scenarios,     setScenarios    ] = useState<ScenarioSummary[]>([]);
+  const [loading,       setLoading      ] = useState(true);
+  const [error,         setError        ] = useState("");
+  const [deletingId,    setDeletingId   ] = useState<string | null>(null);
+  const [drawerScene,   setDrawerScene  ] = useState<ScenarioDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [toasts,        setToasts       ] = useState<Toast[]>([]);
+
+  // ── Toast helpers ────────────────────────────────────────────────────────
+
+  function pushToast(type: Toast["type"], message: string) {
+    const id = ++_toastId;
+    setToasts((prev) => [...prev, { id, type, message }]);
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3500);
+  }
+
+  function dismissToast(id: number) {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }
+
+  // ── Data loading ─────────────────────────────────────────────────────────
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -283,17 +349,15 @@ export function ScenarioHistoryTab() {
 
   useEffect(() => { load(); }, [load]);
 
+  // ── Handlers ──────────────────────────────────────────────────────────────
+
   async function handleView(summary: ScenarioSummary) {
     setLoadingDetail(true);
     try {
       const detail = await getScenario(summary.id);
       setDrawerScene(detail);
     } catch {
-      // fallback: build a synthetic ScenarioDetail from summary
-      setDrawerScene({
-        ...summary,
-        input_data: {},
-      });
+      setDrawerScene({ ...summary, input_data: {} });
     } finally {
       setLoadingDetail(false);
     }
@@ -305,12 +369,15 @@ export function ScenarioHistoryTab() {
       await deleteScenario(id);
       setScenarios((prev) => prev.filter((s) => s.id !== id));
       if (drawerScene?.id === id) setDrawerScene(null);
+      pushToast("success", "Scenario deleted successfully.");
     } catch {
-      // silently re-enable button
+      pushToast("error", "Failed to delete scenario. Please try again.");
     } finally {
       setDeletingId(null);
     }
   }
+
+  // ── Grouping ──────────────────────────────────────────────────────────────
 
   const grouped = FEATURE_ORDER.reduce<Record<string, ScenarioSummary[]>>((acc, f) => {
     acc[f] = scenarios.filter((s) => s.feature === f);
@@ -346,6 +413,9 @@ export function ScenarioHistoryTab() {
 
   return (
     <>
+      {/* Toast notifications */}
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+
       {/* Header row */}
       <div className="flex items-center justify-between mb-4">
         <p className="text-xs text-muted-foreground">
@@ -361,7 +431,7 @@ export function ScenarioHistoryTab() {
         </button>
       </div>
 
-      {/* Loading detail spinner (shows inline, not full-screen) */}
+      {/* Loading detail spinner */}
       {loadingDetail && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
           <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading details…
