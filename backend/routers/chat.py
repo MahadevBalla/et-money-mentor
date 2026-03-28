@@ -30,6 +30,7 @@ from db.session_store import (
 )
 from models import ChatRequest, ChatResponse
 from rag.knowledge_base import query as rag_query
+from db.session_store import create_session 
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["chat"])
@@ -299,3 +300,12 @@ async def _stream_reply(session_id: str, message: str, user_id: str) -> AsyncGen
         {"role": "user", "content": message},
         {"role": "assistant", "content": full_reply},
     )
+
+
+@router.post("/session")
+async def create_chat_session(
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    """Create a blank chat session for the chat UI."""
+    session_id = await create_session(current_user.id, "chat")
+    return {"session_id": session_id}
