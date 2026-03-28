@@ -9,6 +9,7 @@ import {
 import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { AdvicePanel } from "@/components/ui/advice-panel";
+import { ScenarioStartGate, type ScenarioChoice } from "@/components/ui/scenario-start-gate";
 import { cn } from "@/lib/utils";
 import { getFIREPlan } from "@/lib/finance";
 import {
@@ -17,6 +18,7 @@ import {
   type FIREApiResponse,
   type FIREPayload,
 } from "@/lib/fire-types";
+import { getPortfolio, isProfileEmpty, portfolioToFIREForm } from "@/lib/portfolio";
 import { StepProfile } from "./steps/step-profile";
 import { StepMoney }   from "./steps/step-money";
 import { StepGoals }   from "./steps/step-goals";
@@ -235,11 +237,29 @@ function LoadingOverlay() {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export function FIREPage() {
+  type Phase = "gate" | "wizard" | "review" | "loading" | "result";
+
+  const [phase, setPhase] = useState<Phase>("gate");
   const [step,    setStep   ] = useState(1);
   const [form,    setForm   ] = useState<FIREFormState>(DEFAULT_FIRE_FORM);
-  const [loading, setLoading] = useState(false);
   const [error,   setError  ] = useState("");
   const [result,  setResult ] = useState<FIREApiResponse | null>(null);
+
+  async function handleGateChoice(choice: ScenarioChoice) {
+    if (choice === "portfolio") {
+      try {
+        const portfolio = await getPortfolio();
+        if (!isProfileEmpty(portfolio)) {
+          const mapped = portfolioToFIREForm(
+            portfolio.profile as Parameters<typeof portfolioToFIREForm>[0]
+          );
+          setForm((f) => ({ ...f, ...mapped }));
+        }
+      } catch {}
+    }
+    setPhase("wizard");
+    setStep(1);
+  }
 
   function patch(p: Partial<FIREFormState>) {
     setForm((f) => ({ ...f, ...p }));
@@ -255,22 +275,24 @@ export function FIREPage() {
 
   function goBack() {
     setError("");
-    setStep((s) => Math.max(1, s - 1));
+    if (phase === "review") { setPhase("wizard"); return; }
+    if (step === 1) { setPhase("gate"); return; }
+    setStep((s) => s - 1);
   }
 
   async function handleSubmit() {
     setError("");
-    setLoading(true);
+    setPhase("loading");
     try {
       const payload = buildPayload(form);
       const res = await getFIREPlan(payload);
       setResult(res);
+      setPhase("result");
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Something went wrong. Please try again."
       );
-    } finally {
-      setLoading(false);
+      setPhase("wizard");
     }
   }
 
@@ -279,6 +301,7 @@ export function FIREPage() {
     setForm(DEFAULT_FIRE_FORM);
     setStep(1);
     setError("");
+    setPhase("gate");
   }
 
   const monthlyInvestable = Math.max(
@@ -294,7 +317,7 @@ export function FIREPage() {
     <AppShell>
       <div className="space-y-6 max-w-2xl mx-auto">
         {/* Page header */}
-        {!result && (
+        {phase !== "result" && (
           <div>
             <h1 className="text-2xl font-bold tracking-tight">FIRE Planner</h1>
             <p className="text-muted-foreground text-sm mt-1">
@@ -303,8 +326,7 @@ export function FIREPage() {
           </div>
         )}
 
-        {/* ── Results ── */}
-        {result && (
+        {phase === "result" && result && (
           <div className="space-y-6">
             <div>
               <h1 className="text-2xl font-bold tracking-tight">
@@ -389,40 +411,48 @@ export function FIREPage() {
           </div>
         )}
 
-        {/* ── Loading ── */}
-        {loading && !result && (
+        {phase === "loading" && (
           <div className="bg-card border border-border rounded-xl px-8">
             <LoadingOverlay />
           </div>
         )}
 
-        {/* ── Wizard ── */}
-        {!result && !loading && (
+        {(phase === "gate" || phase === "wizard") && (
           <div className="bg-card border border-border rounded-xl p-6">
-            <StepperHeader
-              current={step}
-              onStepClick={(n) => {
-                setStep(n);
-                setError("");
-              }}
-            />
+            {phase === "gate" && (
+              <ScenarioStartGate
+                toolName="FIRE Planner"
+                prefilledFields="Age, income, assets, goals and risk profile"
+                onChoice={handleGateChoice}
+              />
+            )}
 
-            {/* Step title */}
-            <div className="mb-6">
-              <h2 className="text-base font-semibold">
-                Step {step}: {stepTitles[step - 1]}
-                {step === 3 && (
-                  <span className="ml-2 text-xs font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-                    Optional
-                  </span>
-                )}
-              </h2>
-            </div>
+            {phase === "wizard" && (
+              <>
+                <StepperHeader
+                  current={step}
+                  onStepClick={(n) => {
+                    setStep(n);
+                    setError("");
+                  }}
+                />
 
-            {/* Step content */}
-            {step === 1 && <StepProfile form={form} onChange={patch} />}
-            {step === 2 && <StepMoney   form={form} onChange={patch} />}
-            {step === 3 && <StepGoals   form={form} onChange={patch} />}
+                <div className="mb-6">
+                  <h2 className="text-base font-semibold">
+                    Step {step}: {stepTitles[step - 1]}
+                    {step === 3 && (
+                      <span className="ml-2 text-xs font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                        Optional
+                      </span>
+                    )}
+                  </h2>
+                </div>
+
+                {step === 1 && <StepProfile form={form} onChange={patch} />}
+                {step === 2 && <StepMoney   form={form} onChange={patch} />}
+                {step === 3 && <StepGoals   form={form} onChange={patch} />}
+              </>
+            )}
 
             {/* Error */}
             {error && (
@@ -431,42 +461,42 @@ export function FIREPage() {
               </div>
             )}
 
-            {/* Navigation */}
-            <div className="flex items-center justify-between mt-6 pt-4 border-t border-border">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={goBack}
-                disabled={step === 1}
-                className="gap-1.5"
-              >
-                <ChevronLeft className="h-4 w-4" /> Back
-              </Button>
-
-              <div className="flex items-center gap-3">
-                {step === 3 && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => { setError(""); handleSubmit(); }}
-                    className="text-muted-foreground"
-                  >
-                    Skip & Calculate
-                  </Button>
-                )}
+            {phase !== "gate" && (
+              <div className="flex items-center justify-between mt-6 pt-4 border-t border-border">
                 <Button
                   type="button"
-                  onClick={goNext}
-                  size={step === 3 ? "lg" : "default"}
+                  variant="outline"
+                  onClick={goBack}
                   className="gap-1.5"
                 >
-                  {step === 3
-                    ? "Calculate FIRE Path"
-                    : <>Next <ChevronRight className="h-4 w-4" /></>}
+                  <ChevronLeft className="h-4 w-4" /> Back
                 </Button>
+
+                <div className="flex items-center gap-3">
+                  {step === 3 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => { setError(""); handleSubmit(); }}
+                      className="text-muted-foreground"
+                    >
+                      Skip & Calculate
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    onClick={goNext}
+                    size={step === 3 ? "lg" : "default"}
+                    className="gap-1.5"
+                  >
+                    {step === 3
+                      ? "Calculate FIRE Path"
+                      : <>Next <ChevronRight className="h-4 w-4" /></>}
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
       </div>

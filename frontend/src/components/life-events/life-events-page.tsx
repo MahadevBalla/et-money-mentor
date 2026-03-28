@@ -9,8 +9,10 @@ import {
 import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { AdvicePanel } from "@/components/ui/advice-panel";
-import { cn } from "@/lib/utils";
+import { ScenarioStartGate, type ScenarioChoice } from "@/components/ui/scenario-start-gate";
+import { cn }          from "@/lib/utils";
 import { getLifeEventPlan } from "@/lib/finance";
+import { getPortfolio, isProfileEmpty, portfolioToLifeEventForm } from "@/lib/portfolio";
 import {
   DEFAULT_LIFE_EVENT_FORM,
   EVENT_META,
@@ -167,11 +169,29 @@ function LoadingOverlay({ eventType }: Readonly<{ eventType: string | null }>) {
 }
 
 export function LifeEventsPage() {
-  const [step, setStep] = useState(1);
-  const [form, setForm] = useState<LifeEventFormState>(DEFAULT_LIFE_EVENT_FORM);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [result, setResult] = useState<LifeEventApiResponse | null>(null);
+  type Phase = "gate" | "wizard" | "review" | "loading" | "result";
+
+  const [phase, setPhase] = useState<Phase>("gate");
+  const [step,    setStep   ] = useState(1);
+  const [form,    setForm   ] = useState<LifeEventFormState>(DEFAULT_LIFE_EVENT_FORM);
+  const [error,   setError  ] = useState("");
+  const [result,  setResult ] = useState<LifeEventApiResponse | null>(null);
+
+  async function handleGateChoice(choice: ScenarioChoice) {
+    if (choice === "portfolio") {
+      try {
+        const portfolio = await getPortfolio();
+        if (!isProfileEmpty(portfolio)) {
+          const mapped = portfolioToLifeEventForm(
+            portfolio.profile as Parameters<typeof portfolioToLifeEventForm>[0]
+          );
+          setForm((f) => ({ ...f, ...mapped }));
+        }
+      } catch {}
+    }
+    setPhase("wizard");
+    setStep(1);
+  }
 
   function patch(p: Partial<LifeEventFormState>) { setForm((f) => ({ ...f, ...p })); }
 
@@ -188,22 +208,34 @@ export function LifeEventsPage() {
     handleSubmit();
   }
 
-  function goBack() { setError(""); setStep((s) => Math.max(1, s - 1)); }
+  function goBack() {
+    setError("");
+    if (phase === "review") { setPhase("wizard"); return; }
+    if (step === 1) { setPhase("gate"); return; }
+    setStep((s) => s - 1);
+  }
 
   async function handleSubmit() {
-    setError(""); setLoading(true);
+    setError("");
+    setPhase("loading");
     try {
       const payload = buildLifeEventPayload(form);
       const res = await getLifeEventPlan(payload as unknown as Record<string, unknown>);
       setResult(res as unknown as LifeEventApiResponse);
+      setPhase("result");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
+      setPhase("wizard");
     }
   }
 
-  function reset() { setResult(null); setForm(DEFAULT_LIFE_EVENT_FORM); setStep(1); setError(""); }
+  function reset() {
+    setResult(null);
+    setForm(DEFAULT_LIFE_EVENT_FORM);
+    setStep(1);
+    setError("");
+    setPhase("gate");
+  }
 
   const meta = form.event_type ? EVENT_META[form.event_type] : null;
   const EventIcon = meta?.icon;
@@ -219,9 +251,16 @@ export function LifeEventsPage() {
   return (
     <AppShell>
       <div className="space-y-6 max-w-2xl mx-auto">
+        {phase !== "result" && (
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Life Events</h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              Get a tailored financial action plan for life&apos;s big moments.
+            </p>
+          </div>
+        )}
 
-        {/* ── Results ── */}
-        {result && (
+        {phase === "result" && result && (
           <div className="space-y-6">
             <div>
               <h1 className="text-2xl font-bold tracking-tight">Your Life Event Plan</h1>
@@ -273,25 +312,30 @@ export function LifeEventsPage() {
           </div>
         )}
 
-        {/* ── Loading ── */}
-        {loading && !result && (
+        {phase === "loading" && (
           <div className="bg-card border border-border rounded-xl px-8">
             <LoadingOverlay eventType={form.event_type} />
           </div>
         )}
 
-        {/* ── Wizard ── */}
-        {!result && !loading && (
-          <>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">Life Events</h1>
-              <p className="text-muted-foreground text-sm mt-1">
-                Get a tailored financial action plan for life&apos;s big moments.
-              </p>
-            </div>
+        {(phase === "gate" || phase === "wizard") && (
             <div className="bg-card border border-border rounded-xl p-6">
-              <StepperHeader current={step} form={form}
-                onStepClick={(n) => { setStep(n); setError(""); }} />
+              {phase === "gate" && (
+                <ScenarioStartGate
+                  toolName="Life Events"
+                  prefilledFields="Age, income, insurance and existing loans"
+                  onChoice={handleGateChoice}
+                />
+              )}
+
+              {phase === "wizard" && (
+                <>
+              <StepperHeader
+                current={step}
+                form={form}
+                onStepClick={(n) => { setStep(n); setError(""); }}
+              />
+
               <div className="mb-5">
                 <h2 className="text-base font-semibold">
                   Step {step}: {stepTitles[step - 1]}
@@ -305,40 +349,53 @@ export function LifeEventsPage() {
                   {error}
                 </div>
               )}
-              <div className={cn(
-                "flex items-center mt-6 pt-4 border-t border-border",
-                step === 1 ? "justify-end" : "justify-between"
-              )}>
-                {step > 1 && (
-                  <Button type="button" variant="outline" onClick={goBack} className="gap-1.5">
-                    <ChevronLeft className="h-4 w-4" /> Back
-                  </Button>
-                )}
-                {step === 1 && (
-                  <Button type="button" onClick={goNext} disabled={!form.event_type} className="gap-1.5">
-                    Next <ChevronRight className="h-4 w-4" />
-                  </Button>
-                )}
-                {step === 2 && (
-                  <Button type="button" onClick={goNext} className="gap-1.5">
-                    Next <ChevronRight className="h-4 w-4" />
-                  </Button>
-                )}
-                {step === 3 && (
-                  <Button type="button" onClick={goNext} size="lg"
-                    className={cn(
-                      "gap-1.5",
-                      meta?.isCrisis && "bg-destructive hover:bg-destructive/90 text-destructive-foreground border-destructive"
-                    )}>
-                    {meta?.isCrisis
-                      ? <><Zap className="h-4 w-4" /> Generate Crisis Plan</>
-                      : <>{EventIcon && <EventIcon className="h-4 w-4" />} Generate My Plan</>
-                    }
-                  </Button>
-                )}
+
+              <div className="flex items-center justify-between mt-6 pt-4 border-t border-border">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={goBack}
+                  className="gap-1.5"
+                >
+                  <ChevronLeft className="h-4 w-4" /> Back
+                </Button>
+
+                <div>
+                  {step === 1 && (
+                    <Button
+                      type="button"
+                      onClick={goNext}
+                      disabled={!form.event_type}
+                      className="gap-1.5"
+                    >
+                      Next <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  )}
+
+                  {step === 2 && (
+                    <Button type="button" onClick={goNext} className="gap-1.5">
+                      Next <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  )}
+
+                  {step === 3 && (
+                  <Button
+                      type="button"
+                      onClick={goNext}
+                      size="lg"
+                      className={cn(
+                        "gap-1.5",
+                        meta?.isCrisis && "bg-red-600 hover:bg-red-700 text-white border-red-600"
+                      )}
+                    >
+                      {meta?.isCrisis ? "⚡ Generate Crisis Plan" : "Generate My Plan"}
+                    </Button>
+                  )}
+                </div>
               </div>
+                </>
+              )}
             </div>
-          </>
         )}
       </div>
     </AppShell>

@@ -122,10 +122,11 @@ export function HoldingsTable({ holdings, highExpenseFunds }: Readonly<Props>) {
                   <td className="px-4 py-3">
                     <div className="flex items-start gap-2">
                       {isHigh && (
-                        <AlertTriangle
-                          className="mt-0.5 h-3.5 w-3.5 text-warning shrink-0"
-                          title="High expense ratio"
-                        />
+                        <span title="High expense ratio">
+                          <AlertTriangle
+                            className="mt-0.5 h-3.5 w-3.5 text-warning shrink-0"
+                          />
+                        </span>
                       )}
                       <div className="min-w-0">
                         <p className="text-xs font-medium text-foreground leading-snug line-clamp-2">

@@ -9,8 +9,10 @@ import {
 import { AppShell }    from "@/components/layout/app-shell";
 import { Button }      from "@/components/ui/button";
 import { AdvicePanel } from "@/components/ui/advice-panel";
+import { ScenarioStartGate, type ScenarioChoice } from "@/components/ui/scenario-start-gate";
 import { cn }          from "@/lib/utils";
 import { getCouplePlan } from "@/lib/finance";
+import { getPortfolio, isProfileEmpty, portfolioToPartnerForm } from "@/lib/portfolio";
 import {
   DEFAULT_COUPLE_FORM,
   buildCouplePayload,
@@ -169,11 +171,32 @@ function LoadingOverlay({ nameA, nameB }: Readonly<{ nameA: string; nameB: strin
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export function CouplePlannerPage() {
+  type Phase = "gate" | "wizard" | "review" | "loading" | "result";
+
+  const [phase, setPhase] = useState<Phase>("gate");
   const [step,    setStep   ] = useState(1);
   const [form,    setForm   ] = useState<CoupleFormState>(DEFAULT_COUPLE_FORM);
-  const [loading, setLoading] = useState(false);
   const [error,   setError  ] = useState("");
   const [result,  setResult ] = useState<CoupleApiResponse | null>(null);
+
+  async function handleGateChoice(choice: ScenarioChoice) {
+    if (choice === "portfolio") {
+      try {
+        const portfolio = await getPortfolio();
+        if (!isProfileEmpty(portfolio)) {
+          const mapped = portfolioToPartnerForm(
+            portfolio.profile as Parameters<typeof portfolioToPartnerForm>[0]
+          );
+          setForm((f) => ({
+            ...f,
+            partner_a: { ...f.partner_a, ...mapped },
+          }));
+        }
+      } catch {}
+    }
+    setPhase("wizard");
+    setStep(1);
+  }
 
   function patch(p: Partial<CoupleFormState>) {
     setForm((f) => ({ ...f, ...p }));
@@ -189,20 +212,22 @@ export function CouplePlannerPage() {
 
   function goBack() {
     setError("");
-    setStep((s) => Math.max(1, s - 1));
+    if (phase === "review") { setPhase("wizard"); return; }
+    if (step === 1) { setPhase("gate"); return; }
+    setStep((s) => s - 1);
   }
 
   async function handleSubmit() {
-    setLoading(true);
+    setPhase("loading");
     setError("");
     try {
       const payload = buildCouplePayload(form);
       const res = await getCouplePlan(payload);
       setResult(res as unknown as CoupleApiResponse);
+      setPhase("result");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
+      setPhase("wizard");
     }
   }
 
@@ -211,6 +236,7 @@ export function CouplePlannerPage() {
     setForm(DEFAULT_COUPLE_FORM);
     setStep(1);
     setError("");
+    setPhase("gate");
   }
 
   const avgRetirementYears = Math.max(
@@ -227,9 +253,16 @@ export function CouplePlannerPage() {
   return (
     <AppShell>
       <div className="space-y-6 max-w-3xl mx-auto">
+        {phase !== "result" && (
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Couple Planner</h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              Joint financial optimisation - HRA, NPS, SIP split, and tax coordination.
+            </p>
+          </div>
+        )}
 
-        {/* ── Results ── */}
-        {result && (
+        {phase === "result" && result && (
           <div className="space-y-6">
             <div>
               <h1 className="text-2xl font-bold tracking-tight">
@@ -260,24 +293,24 @@ export function CouplePlannerPage() {
           </div>
         )}
 
-        {/* ── Loading ── */}
-        {loading && !result && (
+        {phase === "loading" && (
           <div className="bg-card border border-border rounded-xl px-8">
             <LoadingOverlay nameA={nameA} nameB={nameB} />
           </div>
         )}
 
-        {/* ── Wizard ── */}
-        {!result && !loading && (
-          <>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">Couple Planner</h1>
-              <p className="text-muted-foreground text-sm mt-1">
-                Joint financial optimisation — HRA, NPS, SIP split, and tax coordination.
-              </p>
-            </div>
-
+        {(phase === "gate" || phase === "wizard") && (
             <div className="bg-card border border-border rounded-xl p-6">
+              {phase === "gate" && (
+                <ScenarioStartGate
+                  toolName="Couple Planner"
+                  prefilledFields="Your profile pre-fills Partner A - Partner B stays blank"
+                  onChoice={handleGateChoice}
+                />
+              )}
+
+              {phase === "wizard" && (
+                <>
               <StepperHeader
                 current={step}
                 onStepClick={(n) => { setStep(n); setError(""); }}
@@ -322,8 +355,9 @@ export function CouplePlannerPage() {
                   </Button>
                 )}
               </div>
+                </>
+              )}
             </div>
-          </>
         )}
       </div>
     </AppShell>

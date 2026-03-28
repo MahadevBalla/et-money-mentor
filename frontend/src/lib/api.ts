@@ -36,21 +36,22 @@ class ApiService {
 
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: Omit<RequestInit, "body"> & { body?: unknown } = {}
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
+    const { body, ...requestOptions } = options;
 
     const config: RequestInit = {
-      ...options,
+      ...requestOptions,
     };
 
     // Only set JSON headers and body if we have data to send
-    if (options.body) {
+    if (body !== undefined) {
       config.headers = {
         "Content-Type": "application/json",
         ...options.headers,
       };
-      config.body = JSON.stringify(options.body);
+      config.body = JSON.stringify(body);
     } else {
       config.headers = {
         ...options.headers,
@@ -164,6 +165,14 @@ class ApiService {
     headers?: Record<string, string>
   ): Promise<T> {
     return this.request<T>(endpoint, { method: "DELETE", headers });
+  }
+
+  async patch<T>(endpoint: string, data?: unknown, headers?: Record<string, string>): Promise<T> {
+    return this.request<T>(endpoint, {
+      method: "PATCH",
+      body: data,
+      headers,
+    });
   }
 }
 

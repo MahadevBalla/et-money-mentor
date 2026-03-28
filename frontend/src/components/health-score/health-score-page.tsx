@@ -5,10 +5,12 @@ import { useState } from "react";
 import { ChevronRight, ChevronLeft, CheckCircle2, Loader2 } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
+import { ScenarioStartGate, type ScenarioChoice } from "@/components/ui/scenario-start-gate";
 import { cn } from "@/lib/utils";
 import { getHealthScore } from "@/lib/finance";
 import type { HealthScoreApiResponse, HealthScorePayload, WizardFormState } from "@/lib/health-score-types";
 import { DEFAULT_FORM_STATE } from "@/lib/health-score-types";
+import { getPortfolio, isProfileEmpty, portfolioToHealthScoreForm } from "@/lib/portfolio";
 import { StepBasics } from "./steps/step-basics";
 import { StepMoney } from "./steps/step-money";
 import { StepProtection } from "./steps/step-protection";
@@ -262,12 +264,29 @@ function ReviewCard({
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export function HealthScorePage() {
+  type Phase = "gate" | "wizard" | "review" | "loading" | "result";
+
+  const [phase, setPhase] = useState<Phase>("gate");
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<WizardFormState>(DEFAULT_FORM_STATE);
-  const [showReview, setShowReview] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<HealthScoreApiResponse | null>(null);
+
+  async function handleGateChoice(choice: ScenarioChoice) {
+    if (choice === "portfolio") {
+      try {
+        const portfolio = await getPortfolio();
+        if (!isProfileEmpty(portfolio)) {
+          const mapped = portfolioToHealthScoreForm(
+            portfolio.profile as Parameters<typeof portfolioToHealthScoreForm>[0]
+          );
+          setForm((f) => ({ ...f, ...mapped }));
+        }
+      } catch {}
+    }
+    setPhase("wizard");
+    setStep(1);
+  }
 
   function patch(p: Partial<WizardFormState>) {
     setForm((f) => ({ ...f, ...p }));
@@ -277,28 +296,28 @@ export function HealthScorePage() {
     const err = validateStep(step, form);
     if (err) { setError(err); return; }
     setError("");
-    if (step === 4) { setShowReview(true); return; }
+    if (step === 4) { setPhase("review"); return; }
     setStep((s) => s + 1);
   }
 
   function goBack() {
     setError("");
-    if (showReview) { setShowReview(false); return; }
-    setStep((s) => Math.max(1, s - 1));
+    if (phase === "review") { setPhase("wizard"); setStep(4); return; }
+    if (step === 1) { setPhase("gate"); return; }
+    setStep((s) => s - 1);
   }
 
   async function handleSubmit() {
     setError("");
-    setLoading(true);
+    setPhase("loading");
     try {
       const payload = buildPayload(form);
       const res = await getHealthScore(payload);
       setResult(res);
+      setPhase("result");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
-      setShowReview(true);
-    } finally {
-      setLoading(false);
+      setPhase("review");
     }
   }
 
@@ -306,8 +325,8 @@ export function HealthScorePage() {
     setResult(null);
     setForm(DEFAULT_FORM_STATE);
     setStep(1);
-    setShowReview(false);
     setError("");
+    setPhase("gate");
   }
 
   const stepLabels = ["About You", "Your Money", "Protection", "Tax & Goals"];
@@ -317,7 +336,7 @@ export function HealthScorePage() {
       <div className="space-y-6 max-w-2xl mx-auto">
 
         {/* Page header */}
-        {!result && (
+        {phase !== "result" && (
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Financial Health Score</h1>
             <p className="text-muted-foreground text-sm mt-1">
@@ -326,45 +345,48 @@ export function HealthScorePage() {
           </div>
         )}
 
-        {/* ── Results ── */}
-        {result && <HealthScoreResults response={result} onReset={reset} />}
+        {phase === "result" && result && <HealthScoreResults response={result} onReset={reset} />}
 
-        {/* ── Loading ── */}
-        {loading && !result && (
+        {phase === "loading" && (
           <div className="bg-card border border-border rounded-xl px-8">
             <LoadingOverlay />
           </div>
         )}
 
-        {/* ── Wizard ── */}
-        {!result && !loading && (
+        {(phase === "gate" || phase === "wizard" || phase === "review") && (
           <div className="bg-card border border-border rounded-xl p-6">
-            {/* Stepper */}
-            <StepperHeader
-              current={showReview ? 5 : step}
-              onStepClick={(n) => { setStep(n); setShowReview(false); setError(""); }}
-            />
+            {phase === "gate" && (
+              <ScenarioStartGate
+                toolName="Health Score"
+                prefilledFields="Age, income, assets, debts, insurance and tax deductions"
+                onChoice={handleGateChoice}
+              />
+            )}
 
-            {/* Step title */}
-            {!showReview && (
+            {phase === "wizard" && (
+              <>
+                <StepperHeader
+                  current={step}
+                  onStepClick={(n) => { setStep(n); setError(""); }}
+                />
+
               <div className="mb-6">
                 <h2 className="text-base font-semibold">
                   Step {step}: {stepLabels[step - 1]}
                   {step === 4 && <span className="ml-2 text-xs font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">Optional</span>}
                 </h2>
               </div>
+
+                {step === 1 && <StepBasics form={form} onChange={patch} />}
+                {step === 2 && <StepMoney form={form} onChange={patch} />}
+                {step === 3 && <StepProtection form={form} onChange={patch} />}
+                {step === 4 && <StepTaxGoals form={form} onChange={patch} />}
+              </>
             )}
 
-            {/* Step content */}
-            {!showReview && step === 1 && <StepBasics form={form} onChange={patch} />}
-            {!showReview && step === 2 && <StepMoney form={form} onChange={patch} />}
-            {!showReview && step === 3 && <StepProtection form={form} onChange={patch} />}
-            {!showReview && step === 4 && <StepTaxGoals form={form} onChange={patch} />}
-
-            {/* Review */}
-            {showReview && (
+            {phase === "review" && (
               <div className="space-y-5">
-                <ReviewCard form={form} onEdit={(s) => { setStep(s); setShowReview(false); }} />
+                <ReviewCard form={form} onEdit={(s) => { setStep(s); setPhase("wizard"); }} />
               </div>
             )}
 
@@ -375,40 +397,39 @@ export function HealthScorePage() {
               </div>
             )}
 
-            {/* Navigation */}
-            <div className="flex items-center justify-between mt-6 pt-4 border-t border-border">
-              <Button
-                type="button" variant="outline"
-                onClick={goBack}
-                disabled={step === 1 && !showReview}
-                className="gap-1.5"
-              >
-                <ChevronLeft className="h-4 w-4" /> Back
-              </Button>
+            {phase !== "gate" && (
+              <div className="flex items-center justify-between mt-6 pt-4 border-t border-border">
+                <Button type="button" variant="outline" onClick={goBack} className="gap-1.5">
+                  <ChevronLeft className="h-4 w-4" /> Back
+                </Button>
 
-              <div className="flex items-center gap-3">
-                {/* Skip for step 4 */}
-                {step === 4 && !showReview && (
-                  <Button
-                    type="button" variant="ghost" size="sm"
-                    onClick={() => { setError(""); setShowReview(true); }}
-                    className="text-muted-foreground"
-                  >
-                    Skip this step
-                  </Button>
-                )}
+                <div className="flex items-center gap-3">
+                  {phase === "wizard" && step === 4 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => { setError(""); setPhase("review"); }}
+                      className="text-muted-foreground"
+                    >
+                      Skip this step
+                    </Button>
+                  )}
 
-                {showReview ? (
-                  <Button type="button" onClick={handleSubmit} size="lg" className="px-8 gap-1.5">
-                    Calculate My Score <ChevronRight className="h-4 w-4" />
-                  </Button>
-                ) : (
-                  <Button type="button" onClick={goNext} className="gap-1.5">
-                    {step === 4 ? "Review" : "Next"} <ChevronRight className="h-4 w-4" />
-                  </Button>
-                )}
+                  {phase === "wizard" && (
+                    <Button type="button" onClick={goNext} className="gap-1.5">
+                      {step === 4 ? "Review" : "Next"} <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  )}
+
+                  {phase === "review" && (
+                    <Button type="button" onClick={handleSubmit} size="lg" className="px-8 gap-1.5">
+                      Calculate My Score <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
       </div>

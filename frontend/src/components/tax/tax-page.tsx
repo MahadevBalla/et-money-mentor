@@ -9,8 +9,10 @@ import {
 import { AppShell }    from "@/components/layout/app-shell";
 import { Button }      from "@/components/ui/button";
 import { AdvicePanel } from "@/components/ui/advice-panel";
+import { ScenarioStartGate, type ScenarioChoice } from "@/components/ui/scenario-start-gate";
 import { cn }          from "@/lib/utils";
 import { getTaxAnalysis } from "@/lib/finance";
+import { getPortfolio, isProfileEmpty, portfolioToTaxForm } from "@/lib/portfolio";
 import {
   DEFAULT_TAX_FORM,
   FY_LABEL,
@@ -181,11 +183,29 @@ function LoadingOverlay() {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export function TaxPage() {
+  type Phase = "gate" | "wizard" | "review" | "loading" | "result";
+
+  const [phase, setPhase] = useState<Phase>("gate");
   const [step,    setStep   ] = useState(1);
   const [form,    setForm   ] = useState<TaxFormState>(DEFAULT_TAX_FORM);
-  const [loading, setLoading] = useState(false);
   const [error,   setError  ] = useState("");
   const [result,  setResult ] = useState<TaxApiResponse | null>(null);
+
+  async function handleGateChoice(choice: ScenarioChoice) {
+    if (choice === "portfolio") {
+      try {
+        const portfolio = await getPortfolio();
+        if (!isProfileEmpty(portfolio)) {
+          const mapped = portfolioToTaxForm(
+            portfolio.profile as Parameters<typeof portfolioToTaxForm>[0]
+          );
+          setForm((f) => ({ ...f, ...mapped }));
+        }
+      } catch {}
+    }
+    setPhase("wizard");
+    setStep(1);
+  }
 
   function patch(p: Partial<TaxFormState>) {
     setForm((f) => ({ ...f, ...p }));
@@ -201,12 +221,14 @@ export function TaxPage() {
 
   function goBack() {
     setError("");
-    setStep(1);
+    if (phase === "review") { setPhase("wizard"); return; }
+    if (step === 1) { setPhase("gate"); return; }
+    setStep((s) => s - 1);
   }
 
   async function handleSubmit(skipDeductions = false) {
     setError("");
-    setLoading(true);
+    setPhase("loading");
     try {
       const payload = buildPayload(
         skipDeductions
@@ -218,10 +240,10 @@ export function TaxPage() {
       );
       const res = await getTaxAnalysis(payload);
       setResult(res);
+      setPhase("result");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
+      setPhase("wizard");
     }
   }
 
@@ -230,6 +252,7 @@ export function TaxPage() {
     setForm(DEFAULT_TAX_FORM);
     setStep(1);
     setError("");
+    setPhase("gate");
   }
 
   const stepTitles = ["Income & Profile", "Tax Deductions"];
@@ -238,7 +261,7 @@ export function TaxPage() {
     <AppShell>
       <div className="space-y-6 max-w-2xl mx-auto">
         {/* Page header */}
-        {!result && (
+        {phase !== "result" && (
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Tax Wizard</h1>
             <p className="text-muted-foreground text-sm mt-1">
@@ -247,8 +270,7 @@ export function TaxPage() {
           </div>
         )}
 
-        {/* ── Results ── */}
-        {result && (
+        {phase === "result" && result && (
           <div className="space-y-6">
             <div>
               <h1 className="text-2xl font-bold tracking-tight">Your Tax Analysis</h1>
@@ -324,34 +346,44 @@ export function TaxPage() {
           </div>
         )}
 
-        {/* ── Loading ── */}
-        {loading && !result && (
+        {phase === "loading" && (
           <div className="bg-card border border-border rounded-xl px-8">
             <LoadingOverlay />
           </div>
         )}
 
-        {/* ── Wizard ── */}
-        {!result && !loading && (
+        {(phase === "gate" || phase === "wizard") && (
           <div className="bg-card border border-border rounded-xl p-6">
-            <StepperHeader
-              current={step}
-              onStepClick={(n) => { setStep(n); setError(""); }}
-            />
+            {phase === "gate" && (
+              <ScenarioStartGate
+                toolName="Tax Wizard"
+                prefilledFields="Age, income, employment type and all 80C/80D deductions"
+                onChoice={handleGateChoice}
+              />
+            )}
 
-            <div className="mb-6">
-              <h2 className="text-base font-semibold">
-                Step {step}: {stepTitles[step - 1]}
-                {step === 2 && (
-                  <span className="ml-2 text-xs font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-                    Optional
-                  </span>
-                )}
-              </h2>
-            </div>
+            {phase === "wizard" && (
+              <>
+                <StepperHeader
+                  current={step}
+                  onStepClick={(n) => { setStep(n); setError(""); }}
+                />
 
-            {step === 1 && <StepIncome     form={form} onChange={patch} />}
-            {step === 2 && <StepDeductions form={form} onChange={patch} />}
+                <div className="mb-6">
+                  <h2 className="text-base font-semibold">
+                    Step {step}: {stepTitles[step - 1]}
+                    {step === 2 && (
+                      <span className="ml-2 text-xs font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                        Optional
+                      </span>
+                    )}
+                  </h2>
+                </div>
+
+                {step === 1 && <StepIncome     form={form} onChange={patch} />}
+                {step === 2 && <StepDeductions form={form} onChange={patch} />}
+              </>
+            )}
 
             {error && (
               <div className="mt-4 px-4 py-3 bg-destructive/10 border border-destructive/30 rounded-xl text-sm text-destructive">
@@ -359,41 +391,42 @@ export function TaxPage() {
               </div>
             )}
 
-            <div className="flex items-center justify-between mt-6 pt-4 border-t border-border">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={goBack}
-                disabled={step === 1}
-                className="gap-1.5"
-              >
-                <ChevronLeft className="h-4 w-4" /> Back
-              </Button>
-
-              <div className="flex items-center gap-3">
-                {step === 2 && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => { setError(""); handleSubmit(true); }}
-                    className="text-muted-foreground"
-                  >
-                    Skip & Compare
-                  </Button>
-                )}
+            {phase !== "gate" && (
+              <div className="flex items-center justify-between mt-6 pt-4 border-t border-border">
                 <Button
                   type="button"
-                  onClick={goNext}
-                  size={step === 2 ? "lg" : "default"}
+                  variant="outline"
+                  onClick={goBack}
                   className="gap-1.5"
                 >
-                  {step === 2
-                    ? "Compare Tax Regimes"
-                    : <><span>Next</span> <ChevronRight className="h-4 w-4" /></>}
+                  <ChevronLeft className="h-4 w-4" /> Back
                 </Button>
+
+                <div className="flex items-center gap-3">
+                  {step === 2 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => { setError(""); handleSubmit(true); }}
+                      className="text-muted-foreground"
+                    >
+                      Skip & Compare
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    onClick={goNext}
+                    size={step === 2 ? "lg" : "default"}
+                    className="gap-1.5"
+                  >
+                    {step === 2
+                      ? "Compare Tax Regimes"
+                      : <><span>Next</span> <ChevronRight className="h-4 w-4" /></>}
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
       </div>

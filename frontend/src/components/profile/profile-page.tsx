@@ -8,51 +8,62 @@ import {
   Phone,
   Calendar,
   Shield,
-  Settings,
-  Edit,
   CheckCircle,
   XCircle,
   Loader2,
-  Palette
+  Palette,
+  Briefcase,
 } from "lucide-react";
 import { authService, type UserResponse } from "@/lib/auth";
 import { ApiException } from "@/lib/api";
+import {
+  getPortfolio,
+  isProfileEmpty,
+  type PortfolioResponse,
+  type UserProfile,
+} from "@/lib/portfolio";
 import { AppShell } from "@/components/layout";
 import { ToggleTheme } from "@/components/ui/toggle-theme";
+import { Tabs } from "@/components/ui/vercel-tabs";
+import { PortfolioSummary } from "./portfolio-summary";
+import { PortfolioWizard } from "./portfolio-wizard";
 
 export function ProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<UserResponse | null>(null);
+  const [portfolio, setPortfolio] = useState<PortfolioResponse | null>(null);
+  const [activeTab, setActiveTab] = useState("account");
+  const [showPortfolioWizard, setShowPortfolioWizard] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     const loadUserData = async () => {
       try {
-        // Check if user is authenticated
         if (!authService.isAuthenticated()) {
           router.push("/signin");
           return;
         }
 
-        // Try to get cached user data first
         const storedUser = authService.getStoredUser();
         if (storedUser) {
           setUser(storedUser);
         }
 
-        // Fetch fresh user data from API
-        const userData = await authService.authenticatedRequest(() => authService.getMe());
+        const [userData, portfolioData] = await Promise.all([
+          authService.authenticatedRequest(() => authService.getMe()),
+          getPortfolio(),
+        ]);
+
         setUser(userData);
+        setPortfolio(portfolioData);
+        setShowPortfolioWizard(isProfileEmpty(portfolioData));
       } catch (err) {
         if (err instanceof ApiException && (err.status === 401 || err.status === 400)) {
-          // User is not authenticated, redirect to signin
-          console.log("🔑 Authentication expired, redirecting to signin");
-          authService.logout(); // Clear any invalid tokens
+          authService.logout();
           router.push("/signin");
         } else {
-          console.error("❌ Failed to load user data:", err);
-          setError("Failed to load profile data. Please try refreshing the page.");
+          setError("Failed to load profile details. Please refresh and try again.");
         }
       } finally {
         setIsLoading(false);
@@ -75,6 +86,35 @@ export function ProfilePage() {
       return "Invalid date";
     }
   };
+
+  function buildFallbackPortfolio(userId: string, profile: UserProfile): PortfolioResponse {
+    return {
+      user_id: userId,
+      profile,
+      fire: {},
+      health: {},
+      tax: {},
+      mf: {},
+      couple: {},
+      life_event: {},
+    };
+  }
+
+  function handlePortfolioSaved(updated: UserProfile) {
+    setShowPortfolioWizard(false);
+    setPortfolio((prev) => {
+      if (prev) {
+        return { ...prev, profile: updated };
+      }
+      return buildFallbackPortfolio(user?.id ?? "", updated);
+    });
+  }
+
+  const tabs = [
+    { id: "account", label: "Account" },
+    { id: "portfolio", label: "Portfolio" },
+    { id: "appearance", label: "Appearance" },
+  ];
 
   if (isLoading) {
     return (
@@ -109,187 +149,165 @@ export function ProfilePage() {
 
   return (
     <AppShell>
-      {/* Profile Header */}
-      <div className="bg-card rounded-xl shadow-sm p-8 mb-8">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-6">
-            <div className="size-20 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+      <div className="bg-card rounded-xl border border-border p-8 mb-6">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-5 min-w-0">
+            <div className="size-16 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center text-white text-xl font-bold">
               {user.full_name.charAt(0).toUpperCase()}
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground mb-1">
-                {user.full_name}
-              </h1>
-              <p className="text-muted-foreground mb-3">{user.email}</p>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
+            <div className="min-w-0">
+              <h1 className="text-2xl font-bold text-foreground truncate">{user.full_name}</h1>
+              <p className="text-sm text-muted-foreground truncate mt-1">{user.email}</p>
+              <div className="flex flex-wrap items-center gap-3 mt-3">
+                <div className="flex items-center gap-1.5">
                   {user.is_verified ? (
                     <>
                       <CheckCircle className="h-4 w-4 text-green-500" />
-                      <span className="text-sm text-green-600 font-medium">Verified</span>
+                      <span className="text-xs text-green-600 font-medium">Verified</span>
                     </>
                   ) : (
                     <>
                       <XCircle className="h-4 w-4 text-red-500" />
-                      <span className="text-sm text-red-600 font-medium">Not Verified</span>
+                      <span className="text-xs text-red-600 font-medium">Not Verified</span>
                     </>
                   )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <Shield className={`h-4 w-4 ${user.is_active ? 'text-green-500' : 'text-red-500'}`} />
-                  <span className={`text-sm font-medium ${user.is_active ? 'text-green-600' : 'text-red-600'}`}>
-                    {user.is_active ? 'Active' : 'Inactive'}
+                <div className="flex items-center gap-1.5">
+                  <Shield className={`h-4 w-4 ${user.is_active ? "text-green-500" : "text-red-500"}`} />
+                  <span className={`text-xs font-medium ${user.is_active ? "text-green-600" : "text-red-600"}`}>
+                    {user.is_active ? "Active" : "Inactive"}
                   </span>
                 </div>
               </div>
             </div>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 text-primary border border-primary rounded-md hover:bg-primary hover:text-white transition-colors">
-            <Edit className="h-4 w-4" />
-            Edit Profile
-          </button>
+          <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground">
+            <Briefcase className="h-3.5 w-3.5" />
+            Financial Profile
+          </div>
         </div>
       </div>
 
-      {/* Profile Information Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <div className="bg-card rounded-xl border border-border p-4 sm:p-6">
+        <Tabs tabs={tabs} onTabChange={setActiveTab} />
 
-        {/* Contact Information */}
-        <div className="bg-card rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
-            <User className="h-5 w-5 text-primary" />
-            Contact Information
-          </h2>
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-              <Mail className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="text-sm text-muted-foreground">Email Address</p>
-                <p className="font-medium">{user.email}</p>
-              </div>
-            </div>
+        <div className="mt-5">
+          {activeTab === "account" && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="bg-background border border-border rounded-xl p-5">
+                <h2 className="text-base font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <User className="h-4 w-4 text-primary" />
+                  Profile Details
+                </h2>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Email</p>
+                      <p className="text-sm font-medium">{user.email}</p>
+                    </div>
+                  </div>
 
-            {user.phone ? (
-              <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-                <Phone className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Phone Number</p>
-                  <p className="font-medium">{user.phone}</p>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Phone</p>
+                      <p className="text-sm font-medium">{user.phone || "Not provided"}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
-            ) : (
-              <div className="flex items-center gap-3 p-3 bg-muted rounded-lg opacity-50">
-                <Phone className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Phone Number</p>
-                  <p className="text-muted-foreground">Not provided</p>
+
+              <div className="bg-background border border-border rounded-xl p-5">
+                <h2 className="text-base font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-primary" />
+                  Account Details
+                </h2>
+                <div className="space-y-3">
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground">User ID</p>
+                    <p className="text-xs font-mono font-medium mt-1 break-all">{user.id}</p>
+                  </div>
+
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground">Account Created</p>
+                    <p className="text-sm font-medium mt-1">{formatDate(user.created_at)}</p>
+                  </div>
+
+                  {user.last_login_at && (
+                    <div className="p-3 rounded-lg bg-muted/50">
+                      <p className="text-xs text-muted-foreground">Last Login</p>
+                      <p className="text-sm font-medium mt-1">{formatDate(user.last_login_at)}</p>
+                    </div>
+                  )}
                 </div>
               </div>
-            )}
-          </div>
-        </div>
-
-        {/* Account Details */}
-        <div className="bg-card rounded-xl shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-primary" />
-            Account Details
-          </h2>
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-              <div className="w-2 h-2 bg-primary rounded-full"></div>
-              <div>
-                <p className="text-sm text-muted-foreground">User ID</p>
-                <p className="font-medium font-mono text-xs">{user.id}</p>
-              </div>
             </div>
+          )}
 
-            <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <div>
-                <p className="text-sm text-muted-foreground">Account Created</p>
-                <p className="font-medium">{formatDate(user.created_at)}</p>
-              </div>
-            </div>
-
-            {user.last_login_at && (
-              <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Last Login</p>
-                  <p className="font-medium">{formatDate(user.last_login_at)}</p>
+          {activeTab === "portfolio" && (
+            <div className="space-y-4">
+              {portfolio && !showPortfolioWizard && (
+                <div className="bg-background border border-border rounded-xl p-5">
+                  <PortfolioSummary
+                    portfolio={portfolio}
+                    onEdit={() => setShowPortfolioWizard(true)}
+                  />
                 </div>
+              )}
+
+              {(showPortfolioWizard || !portfolio) && (
+                <div className="bg-background border border-border rounded-xl p-5">
+                  <div className="mb-4">
+                    <h2 className="text-base font-semibold">Portfolio Setup</h2>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Add your profile once and all planners can prefill values automatically.
+                    </p>
+                  </div>
+                  <PortfolioWizard
+                    initialData={(portfolio?.profile as Partial<UserProfile>) || undefined}
+                    onSuccess={handlePortfolioSaved}
+                    onCancel={() => {
+                      if (portfolio && !isProfileEmpty(portfolio)) {
+                        setShowPortfolioWizard(false);
+                      } else {
+                        setActiveTab("account");
+                      }
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "appearance" && (
+            <div className="bg-background border border-border rounded-xl p-5">
+              <h2 className="text-base font-semibold text-foreground mb-4 flex items-center gap-2">
+                <Palette className="h-4 w-4 text-primary" />
+                Appearance
+              </h2>
+              <div className="flex items-center justify-between py-3 px-4 bg-muted rounded-lg">
+                <div>
+                  <p className="text-sm font-medium text-foreground">Theme</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Choose between light, dark, or system preference.
+                  </p>
+                </div>
+                <ToggleTheme />
               </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Appearance Section — NEW ── */}
-      <div className="bg-card rounded-xl shadow-sm p-6 mb-6">
-        <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-          <Palette className="h-5 w-5 text-primary" />
-          Appearance
-        </h2>
-        <div className="flex items-center justify-between py-3 px-4 bg-muted rounded-lg">
-          <div>
-            <p className="text-sm font-medium text-foreground">Theme</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Choose between light, dark, or follow your system setting
-            </p>
-          </div>
-          <ToggleTheme />
-        </div>
-      </div>
-
-      {/* Action Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <button className="bg-card rounded-xl shadow-sm p-6 text-left hover:shadow-md transition-shadow">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="size-10 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Settings className="h-5 w-5 text-blue-600" />
             </div>
-            <h3 className="font-semibold">Account Settings</h3>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Update your password, privacy settings, and notifications
-          </p>
-        </button>
-
-        <button className="bg-card rounded-xl shadow-sm p-6 text-left hover:shadow-md transition-shadow">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="size-10 bg-green-100 rounded-lg flex items-center justify-center">
-              <Shield className="h-5 w-5 text-green-600" />
-            </div>
-            <h3 className="font-semibold">Security</h3>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Two-factor authentication and security preferences
-          </p>
-        </button>
-
-        <button className="bg-card rounded-xl shadow-sm p-6 text-left hover:shadow-md transition-shadow">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="size-10 bg-purple-100 rounded-lg flex items-center justify-center">
-              <User className="h-5 w-5 text-purple-600" />
-            </div>
-            <h3 className="font-semibold">Personal Info</h3>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Edit your personal information and profile details
-          </p>
-        </button>
-      </div>
-
-      {/* Error Display */}
-      {error && (
-        <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <div className="flex items-center gap-2 text-red-800">
-            <XCircle className="h-4 w-4" />
-            <p className="text-sm">{error}</p>
-          </div>
+          )}
         </div>
-      )}
+
+        {error && (
+          <div className="mt-5 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center gap-2 text-red-800">
+              <XCircle className="h-4 w-4" />
+              <p className="text-sm">{error}</p>
+            </div>
+          </div>
+        )}
+      </div>
     </AppShell>
   );
 }
