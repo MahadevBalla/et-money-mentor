@@ -27,6 +27,7 @@ import { ToggleTheme } from "@/components/ui/toggle-theme";
 import { Tabs } from "@/components/ui/vercel-tabs";
 import { PortfolioSummary } from "./portfolio-summary";
 import { PortfolioWizard } from "./portfolio-wizard";
+import { ScenarioHistoryTab } from "./scenario-history-tab";
 
 export function ProfilePage() {
   const router = useRouter();
@@ -113,6 +114,7 @@ export function ProfilePage() {
   const tabs = [
     { id: "account", label: "Account" },
     { id: "portfolio", label: "Portfolio" },
+    { id: "history",    label: "History"    },
     { id: "appearance", label: "Appearance" },
   ];
 

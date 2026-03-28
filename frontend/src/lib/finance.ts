@@ -59,6 +59,8 @@ export async function getHealthScore(data: HealthScorePayload): Promise<HealthSc
   return authedPost<HealthScoreApiResponse>("/api/health-score", {
     profile: data,
     use_profile: false,
+    save_scenario: true,                          // ← add this
+    scenario_name: `Health Score – ${new Date().toLocaleDateString("en-IN")}`,
   });
 }
 
@@ -100,9 +102,10 @@ export async function getFIREPlan(data: FIREPayload): Promise<FIREApiResponse> {
   return authedPost<FIREApiResponse>("/api/fire-planner", {
     profile: data,
     use_profile: false,
+    save_scenario: true,                          // ← add this
+    scenario_name: `FIRE Plan – ${new Date().toLocaleDateString("en-IN")}`,
   });
 }
-
 // ─── Tax Wizard ───────────────────────────────────────────────────────────────
 
 export interface TaxResult {
@@ -129,6 +132,8 @@ export async function getTaxAnalysis(data: TaxPayload): Promise<TaxApiResponse> 
   return authedPost<TaxApiResponse>("/api/tax-wizard", {
     profile: data,
     use_profile: false,
+    save_scenario: true,                          // ← add this
+    scenario_name: `Tax Analysis – ${new Date().toLocaleDateString("en-IN")}`,
   });
 }
 
@@ -159,7 +164,11 @@ export interface LifeEventResponse {
 }
 
 export async function getLifeEventPlan(data: Record<string, unknown>): Promise<LifeEventResponse> {
-  return authedPost<LifeEventResponse>("/api/life-event", data);
+  return authedPost<LifeEventResponse>("/api/life-event", {
+    ...data,
+    save_scenario: true,                          // ← add this
+    scenario_name: `Life Event – ${new Date().toLocaleDateString("en-IN")}`,
+  });
 }
 
 // ─── Couple Planner ───────────────────────────────────────────────────────────
@@ -185,7 +194,11 @@ export interface CouplePlanResponse {
 }
 
 export async function getCouplePlan(data: Record<string, unknown>): Promise<CouplePlanResponse> {
-  return authedPost<CouplePlanResponse>("/api/couple-planner", data);
+  return authedPost<CouplePlanResponse>("/api/couple-planner", {
+    ...data,
+    save_scenario: true,                          // ← add this
+    scenario_name: `Couple Plan – ${new Date().toLocaleDateString("en-IN")}`,
+  });
 }
 
 // ─── MF X-Ray ─────────────────────────────────────────────────────────────────
@@ -231,6 +244,8 @@ export interface MFXrayResponse {
 export async function getMFXray(file: File): Promise<MFXrayResponse> {
   const formData = new FormData();
   formData.append("file", file);
+  formData.append("save_scenario", "true");       // ← add this
+  formData.append("scenario_name", `MF X-Ray – ${new Date().toLocaleDateString("en-IN")}`); 
   const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
   return authService.authenticatedRequest(async () => {
     const response = await fetch(`${baseURL}/api/mf-xray`, {
