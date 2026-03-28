@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Bot, User, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ChatMessage } from "@/lib/chat";
+import { TtsPlayer } from "./tts-player"; // ← NEW
 
 // ── Typing dots — shown before first token arrives ────────────────────────────
 function TypingDots() {
@@ -117,7 +118,21 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
           )}
         </div>
 
-        {showTime && <Timestamp date={message.timestamp} />}
+        {/* ── Timestamp + TTS row — only after stream finishes ── */}
+        {showTime && (
+          <div
+            className={cn(
+              "flex items-center gap-0.5",
+              isUser ? "flex-row-reverse" : "flex-row"
+            )}
+          >
+            <Timestamp date={message.timestamp} />
+            {/* TTS button — only on completed assistant messages with content */}
+            {!isUser && !!message.content && !message.isError && (
+              <TtsPlayer text={message.content} /> // ← NEW
+            )}
+          </div>
+        )}
       </div>
     </motion.div>
   );

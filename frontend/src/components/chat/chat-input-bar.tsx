@@ -1,24 +1,26 @@
 // frontend/src/components/chat/chat-input-bar.tsx
 "use client";
 
-import { useState, useRef, KeyboardEvent, useEffect } from "react";
+import { useState, useRef, KeyboardEvent, useEffect, useCallback } from "react";
 import { ArrowUp, Square } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { VoiceRecorder } from "./voice-recorder";        // ← NEW
+import type { SupportedLanguage } from "@/lib/voice";    // ← NEW
 
 const MAX_CHARS = 4000;
 
 interface Props {
   onSend: (text: string) => void;
-  onStop?: () => void;       // called when Stop button / Enter during stream
-  isStreaming?: boolean;     // true = currently receiving tokens
-  disabled?: boolean;        // true = session not ready yet
+  onStop?: () => void;
+  isStreaming?: boolean;
+  disabled?: boolean;
 }
 
 export function ChatInputBar({ onSend, onStop, isStreaming, disabled }: Props) {
   const [text, setText] = useState("");
+  const [language, setLanguage] = useState<SupportedLanguage>("en-IN"); // ← NEW
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-resize textarea up to 148px
   useEffect(() => {
     const el = textareaRef.current;
     if (!el) return;
@@ -36,14 +38,17 @@ export function ChatInputBar({ onSend, onStop, isStreaming, disabled }: Props) {
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      // Enter during stream = Stop
-      if (isStreaming) {
-        onStop?.();
-      } else {
-        handleSend();
-      }
+      if (isStreaming) onStop?.();
+      else handleSend();
     }
   };
+
+  // ← NEW: transcript from voice fills textarea, user can edit before sending
+  const handleTranscript = useCallback((transcript: string) => {
+    setText(transcript);
+    // Slight delay so the textarea re-renders before focusing
+    setTimeout(() => textareaRef.current?.focus(), 50);
+  }, []);
 
   const remaining = MAX_CHARS - text.length;
   const nearLimit = remaining < 300;
@@ -51,7 +56,6 @@ export function ChatInputBar({ onSend, onStop, isStreaming, disabled }: Props) {
 
   return (
     <div className="shrink-0 border-t border-border bg-background/95 backdrop-blur-sm px-4 pt-3 pb-4">
-      {/* Input wrapper — glows primary while streaming */}
       <div
         className={cn(
           "flex items-end gap-2 rounded-2xl border bg-card px-4 py-3",
@@ -74,7 +78,7 @@ export function ChatInputBar({ onSend, onStop, isStreaming, disabled }: Props) {
               ? "Responding… press Stop or wait"
               : disabled
               ? "Connecting to your session..."
-              : "Ask about your FIRE plan, tax savings, or anything financial…"
+              : "Ask anything — or tap 🎤 to speak"  // ← updated
           }
           className={cn(
             "flex-1 resize-none bg-transparent text-sm leading-relaxed outline-none",
@@ -83,7 +87,7 @@ export function ChatInputBar({ onSend, onStop, isStreaming, disabled }: Props) {
           )}
         />
 
-        <div className="flex items-center gap-2 shrink-0 self-end pb-0.5">
+        <div className="flex items-center gap-1.5 shrink-0 self-end pb-0.5">
           {nearLimit && !isStreaming && (
             <span
               className={cn(
@@ -97,7 +101,17 @@ export function ChatInputBar({ onSend, onStop, isStreaming, disabled }: Props) {
             </span>
           )}
 
-          {/* Button: Stop (red square) during stream, Send (primary arrow) otherwise */}
+          {/* ← NEW: Voice recorder — hidden while AI is streaming */}
+          {!isStreaming && (
+            <VoiceRecorder
+              onTranscript={handleTranscript}
+              disabled={disabled}
+              language={language}
+              onLanguageChange={setLanguage}
+            />
+          )}
+
+          {/* Send / Stop — unchanged logic */}
           {isStreaming ? (
             <button
               onClick={onStop}
@@ -129,7 +143,6 @@ export function ChatInputBar({ onSend, onStop, isStreaming, disabled }: Props) {
         </div>
       </div>
 
-      {/* Contextual hint row */}
       <p className="text-[11px] text-muted-foreground/60 text-center mt-2 select-none">
         {isStreaming ? (
           <>

@@ -40,7 +40,8 @@ async def speech_to_text(
     audio_bytes: bytes,
     *,
     language_code: str = "en-IN",
-    model: str = "saaras:v1",
+    model: str = "saaras:v3",
+    content_type: str = "audio/webm",   # ← NEW param
 ) -> str:
     """
     Convert audio bytes to text via Sarvam Saaras STT API.
@@ -50,8 +51,23 @@ async def speech_to_text(
     if not settings.SARVAM_API_KEY:
         raise RuntimeError("SARVAM_API_KEY not configured")
 
+    # Map MIME → extension so Sarvam can identify the format
+    # Sarvam accepts: wav, mp3, ogg, webm, mp4, flac
+    mime_to_ext = {
+        "audio/webm": "webm",
+        "audio/ogg":  "ogg",
+        "audio/mp4":  "mp4",
+        "audio/mpeg": "mp3",
+        "audio/wav":  "wav",
+        "audio/flac": "flac",
+    }
+    # Strip codec params: "audio/webm;codecs=opus" → "audio/webm"
+    base_mime = content_type.split(";")[0].strip()
+    ext = mime_to_ext.get(base_mime, "webm")
+    filename = f"recording.{ext}"
+
     files = {
-        "file": ("audio.wav", audio_bytes, "audio/wav"),
+        "file": (filename, audio_bytes, base_mime),  # ← explicit MIME + filename
         "language_code": (None, language_code),
         "model": (None, model),
     }
@@ -59,6 +75,7 @@ async def speech_to_text(
 
     async with httpx.AsyncClient(timeout=30.0) as client:
         resp = await client.post(_SARVAM_STT_URL, files=files, headers=headers)
+        logger.error("Sarvam STT raw response: status=%s body=%s", resp.status_code, resp.text)
         resp.raise_for_status()
         data = resp.json()
         return data.get("transcript", "")

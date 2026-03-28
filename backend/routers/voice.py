@@ -29,7 +29,7 @@ _MAX_AUDIO_SIZE = 10 * 1024 * 1024  # 10 MB
     },
 )
 async def stt(
-    audio: UploadFile = File(..., description="WAV / MP3 / OGG audio file"),
+    audio: UploadFile = File(..., description="WAV / MP3 / OGG / WebM audio file"),
     language_code: str = Form(default="en-IN"),
 ) -> dict:
     """
@@ -43,8 +43,15 @@ async def stt(
     if len(audio_bytes) > _MAX_AUDIO_SIZE:
         raise HTTPException(413, detail="Audio file too large (max 10 MB)")
 
+    # Pass the actual content_type the browser sent — Sarvam needs it
+    content_type = audio.content_type or "audio/webm"
+
     try:
-        transcript = await speech_to_text(audio_bytes, language_code=language_code)
+        transcript = await speech_to_text(
+            audio_bytes,
+            language_code=language_code,
+            content_type=content_type,   # ← NEW
+        )
         return {"transcript": transcript, "language": language_code}
     except Exception as e:
         logger.error("STT failed: %s", e)
