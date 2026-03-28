@@ -16,6 +16,7 @@ import { LoaderFive } from "@/components/ui/loader";
 import { getPortfolio, isProfileEmpty } from "@/lib/portfolio";
 import type { PortfolioResponse, UserProfile } from "@/lib/portfolio";
 import { cn } from "@/lib/utils";
+import { authService } from "@/lib/auth";
 
 // ─── Tool definitions ─────────────────────────────────────────────────────────
 const TOOLS = [
@@ -415,6 +416,8 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 export function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [portfolio, setPortfolio] = useState<PortfolioResponse | null>(null);
+  const user = authService.getStoredUser();
+  const firstName = user?.full_name?.split(" ")[0];
 
   useEffect(() => {
     const minDelay = new Promise<void>((r) => setTimeout(r, 2500));
@@ -428,8 +431,6 @@ export function DashboardPage() {
       );
     Promise.all([minDelay, fetchData]).then(() => setIsLoading(false));
   }, []);
-
-  const profile = portfolio?.profile as Partial<UserProfile> | undefined;
 
   return (
     <AppShell>
@@ -445,7 +446,7 @@ export function DashboardPage() {
             className="space-y-8"
           >
             {/* ── Hero ── */}
-            <DashboardHero name={profile?.name as string | undefined} />
+              <DashboardHero name={firstName} />
 
             {/* ── Portfolio Pulse ── */}
             <div className="space-y-3">
