@@ -282,6 +282,10 @@ export function ProfilePage() {
             </div>
           )}
 
+          {activeTab === "history" && (
+            <ScenarioHistoryTab />
+          )}
+
           {activeTab === "appearance" && (
             <div className="bg-background border border-border rounded-xl p-5">
               <h2 className="text-base font-semibold text-foreground mb-4 flex items-center gap-2">

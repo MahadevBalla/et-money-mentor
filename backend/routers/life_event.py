@@ -16,7 +16,7 @@ from agents.intake_agent import run_intake_agent
 from agents.life_event_agent import generate_life_event_advice
 from core.dependencies import get_current_user
 from core.exceptions import MoneyMentorError, ValidationError
-from db.session_store import User, append_log, create_session, update_session_state
+from db.session_store import User, append_log, create_session, save_scenario, update_session_state
 from finance.life_event import analyse_life_event
 from models.api_responses import ErrorResponse, LifeEventResponse
 from models.common import LifeEventType
@@ -98,19 +98,28 @@ async def life_event(
             )
         )
 
+        life_event_summary = {
+            "event_type": result.event_type.value,
+            "event_amount": result.event_amount,
+            "tax_impact": result.tax_impact,
+            "allocations": [
+                {"category": a.category, "amount": a.amount} for a in result.allocations
+            ],
+        }
+
         await update_session_state(
-            session_id,
-            current_user.id,
-            "life_event",
-            {
-                "event_type": result.event_type.value,
-                "event_amount": result.event_amount,
-                "tax_impact": result.tax_impact,
-                "allocations": [
-                    {"category": a.category, "amount": a.amount} for a in result.allocations
-                ],
-            },
+            session_id, current_user.id, "life_event", life_event_summary
         )
+
+        if raw_data.get("save_scenario"):
+            await save_scenario(
+                user_id=current_user.id,
+                feature="life_event",
+                input_data={k: v for k, v in raw_data.items()
+                            if k not in ("save_scenario", "scenario_name")},
+                result_data=life_event_summary,
+                name=raw_data.get("scenario_name"),
+            )
 
         return LifeEventResponse(
             session_id=session_id,

@@ -18,7 +18,7 @@ from agents.guardrail_agent import run_guardrail
 from agents.intake_agent import run_intake_agent
 from core.dependencies import get_current_user
 from core.exceptions import MoneyMentorError, ValidationError
-from db.session_store import User, append_log, create_session, update_session_state
+from db.session_store import User, append_log, create_session, save_scenario, update_session_state
 from finance.couple import optimise_couple_finances
 from models.api_responses import CoupleResponse, ErrorResponse
 from models.user import Goal
@@ -109,20 +109,29 @@ async def couple_planner(
             )
         )
 
+        couple_summary = {
+            "combined_net_worth": result.combined_net_worth,
+            "combined_monthly_surplus": result.combined_monthly_surplus,
+            "better_hra_claimant": result.better_hra_claimant,
+            "hra_savings": result.hra_savings,
+            "joint_tax_saving": result.joint_tax_saving,
+            "partner_a_sip": result.partner_a_sip,
+            "partner_b_sip": result.partner_b_sip,
+        }
+
         await update_session_state(
-            session_id,
-            current_user.id,
-            "couple",
-            {
-                "combined_net_worth": result.combined_net_worth,
-                "combined_monthly_surplus": result.combined_monthly_surplus,
-                "better_hra_claimant": result.better_hra_claimant,
-                "hra_savings": result.hra_savings,
-                "joint_tax_saving": result.joint_tax_saving,
-                "partner_a_sip": result.partner_a_sip,
-                "partner_b_sip": result.partner_b_sip,
-            },
+            session_id, current_user.id, "couple", couple_summary
         )
+
+        if raw_data.get("save_scenario"):
+            await save_scenario(
+                user_id=current_user.id,
+                feature="couple",
+                input_data={k: v for k, v in raw_data.items()
+                            if k not in ("save_scenario", "scenario_name")},
+                result_data=couple_summary,
+                name=raw_data.get("scenario_name"),
+            )
 
         return CoupleResponse(
             session_id=session_id,
