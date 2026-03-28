@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs } from '@/components/ui/vercel-tabs';
-import { ScrollAnimatedText } from '@/components/text-scroll-animation';
+import { ScrollAnimatedText } from '@/components/ui/text-scroll-animation';
 import { Sparkles, ArrowRight, Heart, Flame, DollarSign, TrendingUp } from 'lucide-react';
 
 const TAB_ITEMS = [

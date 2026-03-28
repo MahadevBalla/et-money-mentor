@@ -14,17 +14,18 @@ import {
   type ScenarioSummary, type ScenarioDetail,
 } from "@/lib/portfolio";
 import { ScenarioDetailDrawer } from "./scenario-detail-drawer";
+import { toast } from "sonner";
 
 // ─── Inline Toast ─────────────────────────────────────────────────────────────
 
 interface Toast {
-  id:      number;
-  type:    "success" | "error";
+  id: number;
+  type: "success" | "error";
   message: string;
 }
 
 function ToastContainer({ toasts, onDismiss }: {
-  toasts:    Toast[];
+  toasts: Toast[];
   onDismiss: (id: number) => void;
 }) {
   if (toasts.length === 0) return null;
@@ -43,7 +44,7 @@ function ToastContainer({ toasts, onDismiss }: {
         >
           {t.type === "success"
             ? <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
-            : <XCircle      className="h-4 w-4 flex-shrink-0" />}
+            : <XCircle className="h-4 w-4 flex-shrink-0" />}
           <span>{t.message}</span>
           <button
             type="button"
@@ -61,10 +62,10 @@ function ToastContainer({ toasts, onDismiss }: {
 // ─── Feature config ───────────────────────────────────────────────────────────
 
 interface FeatureMeta {
-  label:     string;
-  icon:      React.ElementType;
-  color:     string;
-  href:      string;
+  label: string;
+  icon: React.ElementType;
+  color: string;
+  href: string;
   keyMetric: (s: ScenarioSummary) => string;
 }
 
@@ -76,14 +77,14 @@ function fmtINR(n: number): string {
 }
 
 function relativeTime(iso: string): string {
-  const diff  = Date.now() - new Date(iso).getTime();
-  const mins  = Math.floor(diff / 60000);
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
-  const days  = Math.floor(diff / 86400000);
-  if (mins  <  1) return "just now";
-  if (mins  < 60) return `${mins}m ago`;
+  const days = Math.floor(diff / 86400000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
   if (hours < 24) return `${hours}h ago`;
-  if (days  <  7) return `${days}d ago`;
+  if (days < 7) return `${days}d ago`;
   return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 }
 
@@ -91,7 +92,7 @@ const FEATURE_META: Record<string, FeatureMeta> = {
   health: {
     label: "Health Score", icon: HeartPulse,
     color: "bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300",
-    href:  "/health-score",
+    href: "/health-score",
     keyMetric: (s) => {
       const score = (s.result as Record<string, number>).overall_score;
       return score != null ? `Score: ${score}/100` : "—";
@@ -100,29 +101,29 @@ const FEATURE_META: Record<string, FeatureMeta> = {
   fire: {
     label: "FIRE Planner", icon: Flame,
     color: "bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300",
-    href:  "/fire",
+    href: "/fire",
     keyMetric: (s) => {
       const r = s.result as Record<string, number | null>;
       if (r.projected_fi_age != null) return `FI Age: ${r.projected_fi_age}`;
-      if (r.corpus_gap       != null) return `Gap: ${fmtINR(r.corpus_gap as number)}`;
+      if (r.corpus_gap != null) return `Gap: ${fmtINR(r.corpus_gap as number)}`;
       return "—";
     },
   },
   tax: {
     label: "Tax Wizard", icon: Receipt,
     color: "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300",
-    href:  "/tax",
+    href: "/tax",
     keyMetric: (s) => {
       const r = s.result as Record<string, unknown>;
       if (r.savings_by_switching != null) return `Saved: ${fmtINR(r.savings_by_switching as number)}`;
-      if (r.recommended_regime   != null) return `Regime: ${String(r.recommended_regime).toUpperCase()}`;
+      if (r.recommended_regime != null) return `Regime: ${String(r.recommended_regime).toUpperCase()}`;
       return "—";
     },
   },
   life_event: {
     label: "Life Events", icon: CalendarHeart,
     color: "bg-pink-100 text-pink-700 dark:bg-pink-950/40 dark:text-pink-300",
-    href:  "/life-events",
+    href: "/life-events",
     keyMetric: (s) => {
       const r = s.result as Record<string, unknown>;
       return r.event_type ? `Event: ${String(r.event_type).replace("_", " ")}` : "—";
@@ -131,7 +132,7 @@ const FEATURE_META: Record<string, FeatureMeta> = {
   couple: {
     label: "Couple Planner", icon: Users2,
     color: "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-300",
-    href:  "/couple-planner",
+    href: "/couple-planner",
     keyMetric: (s) => {
       const r = s.result as Record<string, number>;
       return r.joint_tax_saving != null ? `Tax saved: ${fmtINR(r.joint_tax_saving)}` : "—";
@@ -140,7 +141,7 @@ const FEATURE_META: Record<string, FeatureMeta> = {
   mf: {
     label: "MF X-Ray", icon: ScanLine,
     color: "bg-teal-100 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300",
-    href:  "/portfolio",
+    href: "/portfolio",
     keyMetric: (s) => {
       const r = s.result as Record<string, number>;
       return r.overall_xirr != null ? `XIRR: ${(r.overall_xirr * 100).toFixed(1)}%` : "—";
@@ -155,9 +156,9 @@ const FEATURE_ORDER = ["health", "fire", "tax", "life_event", "couple", "mf"];
 function ScenarioCard({
   scenario, onView, onDelete, isDeleting,
 }: {
-  scenario:   ScenarioSummary;
-  onView:     (s: ScenarioSummary) => void;
-  onDelete:   (id: string) => void;
+  scenario: ScenarioSummary;
+  onView: (s: ScenarioSummary) => void;
+  onDelete: (id: string) => void;
   isDeleting: boolean;
 }) {
   const meta = FEATURE_META[scenario.feature] ?? FEATURE_META.health;
@@ -212,7 +213,7 @@ function ScenarioCard({
         >
           {isDeleting
             ? <Loader2 className="h-3.5 w-3.5 animate-spin text-destructive" />
-            : <Trash2  className="h-3.5 w-3.5" />}
+            : <Trash2 className="h-3.5 w-3.5" />}
           {isDeleting && <span className="hidden sm:inline text-destructive">Deleting…</span>}
         </button>
       </div>
@@ -225,10 +226,10 @@ function ScenarioCard({
 function FeatureGroup({
   feature, scenarios, onView, onDelete, deletingId,
 }: {
-  feature:    string;
-  scenarios:  ScenarioSummary[];
-  onView:     (s: ScenarioSummary) => void;
-  onDelete:   (id: string) => void;
+  feature: string;
+  scenarios: ScenarioSummary[];
+  onView: (s: ScenarioSummary) => void;
+  onDelete: (id: string) => void;
   deletingId: string | null;
 }) {
   const [open, setOpen] = useState(true);
@@ -252,7 +253,7 @@ function FeatureGroup({
           </span>
         </div>
         {open
-          ? <ChevronUp   className="h-4 w-4 text-muted-foreground" />
+          ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
           : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
       </button>
 
@@ -308,13 +309,13 @@ function EmptyState() {
 let _toastId = 0;
 
 export function ScenarioHistoryTab() {
-  const [scenarios,     setScenarios    ] = useState<ScenarioSummary[]>([]);
-  const [loading,       setLoading      ] = useState(true);
-  const [error,         setError        ] = useState("");
-  const [deletingId,    setDeletingId   ] = useState<string | null>(null);
-  const [drawerScene,   setDrawerScene  ] = useState<ScenarioDetail | null>(null);
+  const [scenarios, setScenarios] = useState<ScenarioSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [drawerScene, setDrawerScene] = useState<ScenarioDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
-  const [toasts,        setToasts       ] = useState<Toast[]>([]);
+  const [toasts, setToasts] = useState<Toast[]>([]);
 
   // ── Toast helpers ────────────────────────────────────────────────────────
 
@@ -369,9 +370,9 @@ export function ScenarioHistoryTab() {
       await deleteScenario(id);
       setScenarios((prev) => prev.filter((s) => s.id !== id));
       if (drawerScene?.id === id) setDrawerScene(null);
-      pushToast("success", "Scenario deleted successfully.");
+      toast.success("Scenario deleted successfully.");
     } catch {
-      pushToast("error", "Failed to delete scenario. Please try again.");
+      toast.error("Failed to delete scenario. Please try again.");
     } finally {
       setDeletingId(null);
     }

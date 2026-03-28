@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import { ThemeProvider as MUIThemeProvider } from '@mui/material/styles';
+import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { Bricolage_Grotesque } from "next/font/google";
 import { LenisProvider } from "@/components/layout/lenis-provider";
 import theme from "@/theme";
 import "./globals.css";
 
-const bricolage = Bricolage_Grotesque({ 
+const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
   display: 'swap',
-  variable: "--font-bricolage", 
+  variable: "--font-bricolage",
 });
 
 export const metadata: Metadata = {
@@ -56,7 +57,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={bricolage.variable} suppressHydrationWarning>
       <body className={bricolage.className}>
-         <NextThemesProvider
+        <NextThemesProvider
           attribute="class"          // adds/removes "dark" class on <html>
           defaultTheme="system"      // respects OS preference by default
           enableSystem               // enables system option
@@ -65,6 +66,7 @@ export default function RootLayout({
           <AppRouterCacheProvider options={{ enableCssLayer: true }}>
             <MUIThemeProvider theme={theme}>
               <LenisProvider>
+                <Toaster richColors position="bottom-right" />
                 {children}
               </LenisProvider>
             </MUIThemeProvider>
