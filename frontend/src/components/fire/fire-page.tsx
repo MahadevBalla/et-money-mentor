@@ -1,6 +1,4 @@
-// frontend/src/components/fire/fire-page.tsx
 "use client";
-
 import { useState } from "react";
 import {
   ChevronRight, ChevronLeft, CheckCircle2,
@@ -9,6 +7,7 @@ import {
 import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { AdvicePanel } from "@/components/ui/advice-panel";
+import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
 import { ScenarioStartGate, type ScenarioChoice } from "@/components/ui/scenario-start-gate";
 import { cn } from "@/lib/utils";
 import { getFIREPlan } from "@/lib/finance";
@@ -23,14 +22,13 @@ import { StepProfile } from "./steps/step-profile";
 import { StepMoney } from "./steps/step-money";
 import { StepGoals } from "./steps/step-goals";
 import { FireHero } from "./results/fire-hero";
+import { FIRETimeline } from "./results/fire-timeline";
 import { CorpusChart } from "./results/corpus-chart";
 import { SIPCards } from "./results/sip-cards";
 import { GoalSIPTable } from "./results/goal-sip-table";
 import { AnalysisLoader } from "@/components/ui/analysis-loader";
 import { storeToolSession } from "@/lib/chat";
-import {
-  Flame, BarChart3, Target, TrendingUp,
-} from "lucide-react";
+import { Flame, BarChart3, Target, TrendingUp } from "lucide-react";
 
 // ─── Steps config ─────────────────────────────────────────────────────────────
 const STEPS = [
@@ -65,7 +63,6 @@ function validate(step: number, form: FIREFormState): string | null {
 // ─── Payload builder ──────────────────────────────────────────────────────────
 function buildPayload(form: FIREFormState): FIREPayload {
   const totalEMI = Number(form.total_emi) || 0;
-
   // Build a single synthetic DebtItem from total EMI so the backend
   // can compute profile.total_emi correctly
   const debts =
@@ -80,7 +77,6 @@ function buildPayload(form: FIREFormState): FIREPayload {
         },
       ]
       : [];
-
   return {
     age: Number(form.age),
     city: form.city.trim(),
@@ -177,7 +173,6 @@ function StepperHeader({
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export function FIREPage() {
   type Phase = "gate" | "wizard" | "review" | "loading" | "result";
-
   const [phase, setPhase] = useState<Phase>("gate");
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FIREFormState>(DEFAULT_FIRE_FORM);
@@ -270,23 +265,29 @@ export function FIREPage() {
         )}
 
         {phase === "result" && result && (
-          <div className="space-y-6">
+          <div className="space-y-8">
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">
-                Your FIRE Plan
-              </h1>
+              <h1 className="text-2xl font-bold tracking-tight">Your FIRE Plan</h1>
               <p className="text-muted-foreground text-sm mt-1">
                 Based on your profile — projected year by year
               </p>
             </div>
 
-            {/* Block 1: Hero */}
+            {/* Block 1: Hero KPIs */}
             <FireHero
               result={result.result}
               targetAge={Number(form.retirement_age)}
             />
 
-            {/* Block 2: Corpus chart */}
+            {/* Block 2: FIRE Timeline — first scrollable result a judge sees */}
+            <FIRETimeline
+              projections={result.result.yearly_projections ?? []}
+              currentAge={Number(form.age)}
+              fiAge={result.result.projected_fi_age ?? null}
+              targetAge={Number(form.retirement_age)}
+            />
+
+            {/* Block 3: Corpus chart */}
             <div>
               <h2 className="text-base font-semibold mb-3">
                 Corpus Growth Projection
@@ -298,7 +299,7 @@ export function FIREPage() {
               />
             </div>
 
-            {/* Block 3: SIP cards */}
+            {/* Block 4: SIP cards */}
             <div>
               <h2 className="text-base font-semibold mb-3">
                 How Much SIP Do You Need?
@@ -309,7 +310,7 @@ export function FIREPage() {
               />
             </div>
 
-            {/* Block 4: Goal SIP table */}
+            {/* Block 5: Goal SIP table */}
             {result.result.sip_goals.length > 0 && (
               <GoalSIPTable
                 sipGoals={result.result.sip_goals}
@@ -317,22 +318,50 @@ export function FIREPage() {
               />
             )}
 
-            {/* Block 5: AI advice */}
-            <div>
-              <h2 className="text-base font-semibold mb-3">
-                AI Recommendations
-              </h2>
+            {/* Block 6: AI advice — summary types out word-by-word, full list below */}
+            <div className="space-y-3">
+              <h2 className="text-base font-semibold">AI Recommendations</h2>
+
+              {result.advice?.summary && (
+                <div
+                  className="rounded-xl px-5 py-4 border border-border-subtle"
+                  style={{
+                    background: "linear-gradient(145deg, var(--surface-1), var(--surface-2))",
+                    boxShadow: "var(--shadow-sm)",
+                  }}
+                >
+                  <TextGenerateEffect
+                    words={result.advice.summary}
+                    className="text-sm leading-relaxed text-foreground"
+                    wordDuration={0.04}
+                    delay={0.3}
+                  />
+                </div>
+              )}
+
               <AdvicePanel advice={result.advice} />
             </div>
 
             {/* Cross-feature CTA */}
-            <div className="flex items-center justify-between bg-muted rounded-xl px-5 py-4">
+            <div
+              className="flex items-center justify-between rounded-xl px-5 py-4"
+              style={{
+                background: "var(--surface-2)",
+                border: "1px solid var(--border-subtle)",
+              }}
+            >
               <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
+                <div
+                  className="h-9 w-9 rounded-full flex items-center justify-center"
+                  style={{
+                    background: "var(--primary-subtle)",
+                    border: "1px solid var(--primary-muted)",
+                  }}
+                >
                   <HeartPulse className="h-4 w-4 text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium">
+                  <p className="text-sm font-medium text-foreground">
                     Check your overall financial health
                   </p>
                   <p className="text-xs text-muted-foreground">
@@ -347,13 +376,13 @@ export function FIREPage() {
               </a>
             </div>
 
-            {/* Recalculate */}
             <Button variant="outline" onClick={reset} className="w-full" size="lg">
               Recalculate with new data
             </Button>
           </div>
         )}
 
+        {/* ── LOADING ── */}
         {phase === "loading" && (
           <div className="bg-card border border-border rounded-xl px-8">
             <AnalysisLoader
@@ -369,6 +398,7 @@ export function FIREPage() {
           </div>
         )}
 
+        {/* ── GATE + WIZARD ── */}
         {(phase === "gate" || phase === "wizard") && (
           <div className="bg-card border border-border rounded-xl p-6">
             {phase === "gate" && (
@@ -380,7 +410,8 @@ export function FIREPage() {
                   icon: Flame,
                   badge: "AI-Powered",
                   title: "FIRE Planner",
-                  subtitle: "Find your exact Financial Independence date and the monthly SIP needed to retire early — projected year by year.",
+                  subtitle:
+                    "Find your exact Financial Independence date and the monthly SIP needed to retire early — projected year by year.",
                   accentClass: "text-orange-500",
                   bgClass: "bg-orange-500/10",
                   features: [
@@ -396,12 +427,8 @@ export function FIREPage() {
               <>
                 <StepperHeader
                   current={step}
-                  onStepClick={(n) => {
-                    setStep(n);
-                    setError("");
-                  }}
+                  onStepClick={(n) => { setStep(n); setError(""); }}
                 />
-
                 <div className="mb-6">
                   <h2 className="text-base font-semibold">
                     Step {step}: {stepTitles[step - 1]}
@@ -412,14 +439,12 @@ export function FIREPage() {
                     )}
                   </h2>
                 </div>
-
                 {step === 1 && <StepProfile form={form} onChange={patch} />}
                 {step === 2 && <StepMoney form={form} onChange={patch} />}
                 {step === 3 && <StepGoals form={form} onChange={patch} />}
               </>
             )}
 
-            {/* Error */}
             {error && (
               <div className="mt-4 px-4 py-3 bg-destructive/10 border border-destructive/30 rounded-xl text-sm text-destructive">
                 {error}
@@ -436,7 +461,6 @@ export function FIREPage() {
                 >
                   <ChevronLeft className="h-4 w-4" /> Back
                 </Button>
-
                 <div className="flex items-center gap-3">
                   {step === 3 && (
                     <Button
