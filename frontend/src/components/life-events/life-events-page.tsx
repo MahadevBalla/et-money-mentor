@@ -10,7 +10,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { AdvicePanel } from "@/components/ui/advice-panel";
 import { ScenarioStartGate, type ScenarioChoice } from "@/components/ui/scenario-start-gate";
-import { cn }          from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { getLifeEventPlan } from "@/lib/finance";
 import { getPortfolio, isProfileEmpty, portfolioToLifeEventForm } from "@/lib/portfolio";
 import {
@@ -29,6 +29,8 @@ import { InsuranceGaps } from "./results/insurance-gaps";
 import { PriorityTimeline } from "./results/priority-timeline";
 import { AnalysisLoader } from "@/components/ui/analysis-loader";
 import { storeToolSession } from "@/lib/chat";
+import { Milestone, Home, GraduationCap, Baby } from "lucide-react";
+
 
 const STEPS = [
   { id: 1, label: "Life Event", desc: "What happened?" },
@@ -125,10 +127,10 @@ export function LifeEventsPage() {
   type Phase = "gate" | "wizard" | "review" | "loading" | "result";
 
   const [phase, setPhase] = useState<Phase>("gate");
-  const [step,    setStep   ] = useState(1);
-  const [form,    setForm   ] = useState<LifeEventFormState>(DEFAULT_LIFE_EVENT_FORM);
-  const [error,   setError  ] = useState("");
-  const [result,  setResult ] = useState<LifeEventApiResponse | null>(null);
+  const [step, setStep] = useState(1);
+  const [form, setForm] = useState<LifeEventFormState>(DEFAULT_LIFE_EVENT_FORM);
+  const [error, setError] = useState("");
+  const [result, setResult] = useState<LifeEventApiResponse | null>(null);
 
   async function handleGateChoice(choice: ScenarioChoice) {
     if (choice === "portfolio") {
@@ -140,7 +142,7 @@ export function LifeEventsPage() {
           );
           setForm((f) => ({ ...f, ...mapped }));
         }
-      } catch {}
+      } catch { }
     }
     setPhase("wizard");
     setStep(1);
@@ -282,83 +284,96 @@ export function LifeEventsPage() {
         )}
 
         {(phase === "gate" || phase === "wizard") && (
-            <div className="bg-card border border-border rounded-xl p-6">
-              {phase === "gate" && (
-                <ScenarioStartGate
-                  toolName="Life Events"
-                  prefilledFields="Age, income, insurance and existing loans"
-                  onChoice={handleGateChoice}
-                />
-              )}
-
-              {phase === "wizard" && (
-                <>
-              <StepperHeader
-                current={step}
-                form={form}
-                onStepClick={(n) => { setStep(n); setError(""); }}
+          <div className="bg-card border border-border rounded-xl p-6">
+            {phase === "gate" && (
+              <ScenarioStartGate
+                heroProps={{
+                  icon: Milestone,
+                  badge: "Life Planning",
+                  title: "Life Event Planner",
+                  subtitle: "Plan the financial impact of major life events — buying a home, having a child, higher education — before they happen.",
+                  accentClass: "text-amber-500",
+                  bgClass: "bg-amber-500/10",
+                  features: [
+                    { icon: Home, label: "Home purchase planning" },
+                    { icon: Baby, label: "Child cost projection" },
+                    { icon: GraduationCap, label: "Education fund calculator" },
+                  ],
+                }}
+                toolName="Life Events"
+                prefilledFields="Age, income, insurance and existing loans"
+                onChoice={handleGateChoice}
               />
+            )}
 
-              <div className="mb-5">
-                <h2 className="text-base font-semibold">
-                  Step {step}: {stepTitles[step - 1]}
-                </h2>
-              </div>
-              {step === 1 && <StepEventPicker form={form} onChange={handleEventPick} />}
-              {step === 2 && <StepProfile form={form} onChange={patch} />}
-              {step === 3 && <StepEventDetails form={form} onChange={patch} />}
-              {error && (
-                <div className="mt-4 px-4 py-3 bg-destructive/10 border border-destructive/30 rounded-xl text-sm text-destructive">
-                  {error}
+            {phase === "wizard" && (
+              <>
+                <StepperHeader
+                  current={step}
+                  form={form}
+                  onStepClick={(n) => { setStep(n); setError(""); }}
+                />
+
+                <div className="mb-5">
+                  <h2 className="text-base font-semibold">
+                    Step {step}: {stepTitles[step - 1]}
+                  </h2>
                 </div>
-              )}
+                {step === 1 && <StepEventPicker form={form} onChange={handleEventPick} />}
+                {step === 2 && <StepProfile form={form} onChange={patch} />}
+                {step === 3 && <StepEventDetails form={form} onChange={patch} />}
+                {error && (
+                  <div className="mt-4 px-4 py-3 bg-destructive/10 border border-destructive/30 rounded-xl text-sm text-destructive">
+                    {error}
+                  </div>
+                )}
 
-              <div className="flex items-center justify-between mt-6 pt-4 border-t border-border">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={goBack}
-                  className="gap-1.5"
-                >
-                  <ChevronLeft className="h-4 w-4" /> Back
-                </Button>
-
-                <div>
-                  {step === 1 && (
-                    <Button
-                      type="button"
-                      onClick={goNext}
-                      disabled={!form.event_type}
-                      className="gap-1.5"
-                    >
-                      Next <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  )}
-
-                  {step === 2 && (
-                    <Button type="button" onClick={goNext} className="gap-1.5">
-                      Next <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  )}
-
-                  {step === 3 && (
+                <div className="flex items-center justify-between mt-6 pt-4 border-t border-border">
                   <Button
-                      type="button"
-                      onClick={goNext}
-                      size="lg"
-                      className={cn(
-                        "gap-1.5",
-                        meta?.isCrisis && "bg-red-600 hover:bg-red-700 text-white border-red-600"
-                      )}
-                    >
-                      {meta?.isCrisis ? "⚡ Generate Crisis Plan" : "Generate My Plan"}
-                    </Button>
-                  )}
+                    type="button"
+                    variant="outline"
+                    onClick={goBack}
+                    className="gap-1.5"
+                  >
+                    <ChevronLeft className="h-4 w-4" /> Back
+                  </Button>
+
+                  <div>
+                    {step === 1 && (
+                      <Button
+                        type="button"
+                        onClick={goNext}
+                        disabled={!form.event_type}
+                        className="gap-1.5"
+                      >
+                        Next <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    )}
+
+                    {step === 2 && (
+                      <Button type="button" onClick={goNext} className="gap-1.5">
+                        Next <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    )}
+
+                    {step === 3 && (
+                      <Button
+                        type="button"
+                        onClick={goNext}
+                        size="lg"
+                        className={cn(
+                          "gap-1.5",
+                          meta?.isCrisis && "bg-red-600 hover:bg-red-700 text-white border-red-600"
+                        )}
+                      >
+                        {meta?.isCrisis ? "⚡ Generate Crisis Plan" : "Generate My Plan"}
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              </div>
-                </>
-              )}
-            </div>
+              </>
+            )}
+          </div>
         )}
       </div>
     </AppShell>

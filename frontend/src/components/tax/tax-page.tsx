@@ -27,6 +27,8 @@ import { TaxVerdict } from "./results/tax-verdict";
 import { MissedDeductions } from "./results/missed-deductions";
 import { SlabBreakdown } from "./results/slab-breakdown";
 import { storeToolSession } from "@/lib/chat";
+import { Calculator, ShieldCheck, Banknote, FileText } from "lucide-react";
+
 
 // ─── Steps ────────────────────────────────────────────────────────────────────
 const STEPS = [
@@ -443,6 +445,19 @@ export function TaxPage() {
           >
             {phase === "gate" && (
               <ScenarioStartGate
+                heroProps={{
+                  icon: Calculator,
+                  badge: "AI-Powered",
+                  title: "Tax Wizard",
+                  subtitle: "Optimise your tax under old vs new regime, maximise Section 80C/80D deductions, and get a personalised savings plan.",
+                  accentClass: "text-blue-500",
+                  bgClass: "bg-blue-500/10",
+                  features: [
+                    { icon: ShieldCheck, label: "Old vs New regime comparison" },
+                    { icon: Banknote, label: "Max deduction calculator" },
+                    { icon: FileText, label: "AI filing recommendations" },
+                  ],
+                }}
                 toolName="Tax Wizard"
                 prefilledFields="Age, income, employment type and all 80C/80D deductions"
                 onChoice={handleGateChoice}

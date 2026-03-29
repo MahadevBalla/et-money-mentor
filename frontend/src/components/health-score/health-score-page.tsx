@@ -18,12 +18,14 @@ import { StepTaxGoals } from "./steps/step-tax-goals";
 import { HealthScoreResults } from "./results/health-score-results";
 import { AnalysisLoader } from "@/components/ui/analysis-loader";
 import { storeToolSession } from "@/lib/chat";
+import { HeartPulse, Activity, ShieldCheck, AlertTriangle } from "lucide-react";
+
 
 // ─── Step config ──────────────────────────────────────────────────────────────
 const STEPS = [
-  { id: 1, label: "About You",   desc: "Basic profile",      required: true  },
-  { id: 2, label: "Your Money",  desc: "Income & assets",    required: true  },
-  { id: 3, label: "Protection",  desc: "Insurance",          required: true  },
+  { id: 1, label: "About You", desc: "Basic profile", required: true },
+  { id: 2, label: "Your Money", desc: "Income & assets", required: true },
+  { id: 3, label: "Protection", desc: "Insurance", required: true },
   { id: 4, label: "Tax & Goals", desc: "Deductions & goals", required: false },
 ];
 
@@ -97,8 +99,8 @@ function StepperHeader({
                 isCompleted
                   ? "bg-primary border-primary text-primary-foreground"
                   : isActive
-                  ? "border-primary text-primary bg-background"
-                  : "border-border text-muted-foreground bg-background"
+                    ? "border-primary text-primary bg-background"
+                    : "border-border text-muted-foreground bg-background"
               )}>
                 {isCompleted ? <CheckCircle2 className="h-4 w-4" /> : step.id}
               </div>
@@ -230,7 +232,7 @@ export function HealthScorePage() {
           );
           setForm((f) => ({ ...f, ...mapped }));
         }
-      } catch {}
+      } catch { }
     }
     setPhase("wizard");
     setStep(1);
@@ -315,6 +317,19 @@ export function HealthScorePage() {
           <div className="bg-card border border-border rounded-xl p-6">
             {phase === "gate" && (
               <ScenarioStartGate
+                heroProps={{
+                  icon: HeartPulse,
+                  badge: "360° Analysis",
+                  title: "Financial Health Score",
+                  subtitle: "Get a comprehensive score across income, savings, debt, insurance and investments — with a prioritised action plan.",
+                  accentClass: "text-emerald-500",
+                  bgClass: "bg-emerald-500/10",
+                  features: [
+                    { icon: Activity, label: "Score across 5 dimensions" },
+                    { icon: ShieldCheck, label: "Insurance gap analysis" },
+                    { icon: AlertTriangle, label: "Debt & EMI risk check" },
+                  ],
+                }}
                 toolName="Health Score"
                 prefilledFields="Age, income, assets, debts, insurance and tax deductions"
                 onChoice={handleGateChoice}
@@ -328,12 +343,12 @@ export function HealthScorePage() {
                   onStepClick={(n) => { setStep(n); setError(""); }}
                 />
 
-              <div className="mb-6">
-                <h2 className="text-base font-semibold">
-                  Step {step}: {stepLabels[step - 1]}
-                  {step === 4 && <span className="ml-2 text-xs font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">Optional</span>}
-                </h2>
-              </div>
+                <div className="mb-6">
+                  <h2 className="text-base font-semibold">
+                    Step {step}: {stepLabels[step - 1]}
+                    {step === 4 && <span className="ml-2 text-xs font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">Optional</span>}
+                  </h2>
+                </div>
 
                 {step === 1 && <StepBasics form={form} onChange={patch} />}
                 {step === 2 && <StepMoney form={form} onChange={patch} />}

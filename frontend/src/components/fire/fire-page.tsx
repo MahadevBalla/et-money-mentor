@@ -20,20 +20,23 @@ import {
 } from "@/lib/fire-types";
 import { getPortfolio, isProfileEmpty, portfolioToFIREForm } from "@/lib/portfolio";
 import { StepProfile } from "./steps/step-profile";
-import { StepMoney }   from "./steps/step-money";
-import { StepGoals }   from "./steps/step-goals";
-import { FireHero }    from "./results/fire-hero";
+import { StepMoney } from "./steps/step-money";
+import { StepGoals } from "./steps/step-goals";
+import { FireHero } from "./results/fire-hero";
 import { CorpusChart } from "./results/corpus-chart";
-import { SIPCards }    from "./results/sip-cards";
+import { SIPCards } from "./results/sip-cards";
 import { GoalSIPTable } from "./results/goal-sip-table";
 import { AnalysisLoader } from "@/components/ui/analysis-loader";
 import { storeToolSession } from "@/lib/chat";
+import {
+  Flame, BarChart3, Target, TrendingUp,
+} from "lucide-react";
 
 // ─── Steps config ─────────────────────────────────────────────────────────────
 const STEPS = [
-  { id: 1, label: "Profile",  desc: "Age & risk"        },
-  { id: 2, label: "Money",    desc: "Income & assets"   },
-  { id: 3, label: "Goals",    desc: "Optional"          },
+  { id: 1, label: "Profile", desc: "Age & risk" },
+  { id: 2, label: "Money", desc: "Income & assets" },
+  { id: 3, label: "Goals", desc: "Optional" },
 ];
 
 // ─── Validation ───────────────────────────────────────────────────────────────
@@ -68,27 +71,27 @@ function buildPayload(form: FIREFormState): FIREPayload {
   const debts =
     totalEMI > 0
       ? [
-          {
-            name: "Combined EMIs",
-            outstanding: 0,
-            emi: totalEMI,
-            interest_rate: 0,
-            is_secured: true,
-          },
-        ]
+        {
+          name: "Combined EMIs",
+          outstanding: 0,
+          emi: totalEMI,
+          interest_rate: 0,
+          is_secured: true,
+        },
+      ]
       : [];
 
   return {
-    age:                  Number(form.age),
-    city:                 form.city.trim(),
-    employment_type:      form.employment_type,
-    dependents:           0,
+    age: Number(form.age),
+    city: form.city.trim(),
+    employment_type: form.employment_type,
+    dependents: 0,
     monthly_gross_income: Number(form.monthly_gross_income),
-    monthly_expenses:     Number(form.monthly_expenses),
-    emergency_fund:       0,
-    risk_profile:         form.risk_profile,
-    retirement_age:       Number(form.retirement_age),
-    assets:               form.assets,
+    monthly_expenses: Number(form.monthly_expenses),
+    emergency_fund: 0,
+    risk_profile: form.risk_profile,
+    retirement_age: Number(form.retirement_age),
+    assets: form.assets,
     debts,
     insurance: {
       has_term_life: false, term_cover: 0,
@@ -117,7 +120,7 @@ function StepperHeader({
     <div className="flex items-center gap-0 mb-8">
       {STEPS.map((step, idx) => {
         const isCompleted = current > step.id;
-        const isActive    = current === step.id;
+        const isActive = current === step.id;
         return (
           <div key={step.id} className="flex items-center flex-1 last:flex-none">
             <button
@@ -134,8 +137,8 @@ function StepperHeader({
                   isCompleted
                     ? "bg-primary border-primary text-primary-foreground"
                     : isActive
-                    ? "border-primary text-primary bg-background"
-                    : "border-border text-muted-foreground bg-background"
+                      ? "border-primary text-primary bg-background"
+                      : "border-border text-muted-foreground bg-background"
                 )}
               >
                 {isCompleted ? <CheckCircle2 className="h-4 w-4" /> : step.id}
@@ -147,8 +150,8 @@ function StepperHeader({
                     isActive
                       ? "text-primary"
                       : isCompleted
-                      ? "text-foreground"
-                      : "text-muted-foreground"
+                        ? "text-foreground"
+                        : "text-muted-foreground"
                   )}
                 >
                   {step.label}
@@ -176,10 +179,10 @@ export function FIREPage() {
   type Phase = "gate" | "wizard" | "review" | "loading" | "result";
 
   const [phase, setPhase] = useState<Phase>("gate");
-  const [step,    setStep   ] = useState(1);
-  const [form,    setForm   ] = useState<FIREFormState>(DEFAULT_FIRE_FORM);
-  const [error,   setError  ] = useState("");
-  const [result,  setResult ] = useState<FIREApiResponse | null>(null);
+  const [step, setStep] = useState(1);
+  const [form, setForm] = useState<FIREFormState>(DEFAULT_FIRE_FORM);
+  const [error, setError] = useState("");
+  const [result, setResult] = useState<FIREApiResponse | null>(null);
 
   async function handleGateChoice(choice: ScenarioChoice) {
     if (choice === "portfolio") {
@@ -191,7 +194,7 @@ export function FIREPage() {
           );
           setForm((f) => ({ ...f, ...mapped }));
         }
-      } catch {}
+      } catch { }
     }
     setPhase("wizard");
     setStep(1);
@@ -244,8 +247,8 @@ export function FIREPage() {
   const monthlyInvestable = Math.max(
     0,
     (Number(form.monthly_gross_income) || 0) -
-      (Number(form.monthly_expenses) || 0) -
-      (Number(form.total_emi) || 0)
+    (Number(form.monthly_expenses) || 0) -
+    (Number(form.total_emi) || 0)
   );
 
   const stepTitles = ["Your Profile", "Money & Assets", "Financial Goals"];
@@ -370,6 +373,19 @@ export function FIREPage() {
                 toolName="FIRE Planner"
                 prefilledFields="Age, income, assets, goals and risk profile"
                 onChoice={handleGateChoice}
+                heroProps={{
+                  icon: Flame,
+                  badge: "AI-Powered",
+                  title: "FIRE Planner",
+                  subtitle: "Find your exact Financial Independence date and the monthly SIP needed to retire early — projected year by year.",
+                  accentClass: "text-orange-500",
+                  bgClass: "bg-orange-500/10",
+                  features: [
+                    { icon: BarChart3, label: "Year-by-year corpus projection" },
+                    { icon: Target, label: "Personalised SIP recommendation" },
+                    { icon: TrendingUp, label: "Goal-wise investment split" },
+                  ],
+                }}
               />
             )}
 
@@ -395,8 +411,8 @@ export function FIREPage() {
                 </div>
 
                 {step === 1 && <StepProfile form={form} onChange={patch} />}
-                {step === 2 && <StepMoney   form={form} onChange={patch} />}
-                {step === 3 && <StepGoals   form={form} onChange={patch} />}
+                {step === 2 && <StepMoney form={form} onChange={patch} />}
+                {step === 3 && <StepGoals form={form} onChange={patch} />}
               </>
             )}
 

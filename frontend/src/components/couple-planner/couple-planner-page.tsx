@@ -6,11 +6,11 @@ import {
   ChevronLeft, ChevronRight, CheckCircle2,
   Heart, Users2, UserRound, Target, LucideIcon
 } from "lucide-react";
-import { AppShell }    from "@/components/layout/app-shell";
-import { Button }      from "@/components/ui/button";
+import { AppShell } from "@/components/layout/app-shell";
+import { Button } from "@/components/ui/button";
 import { AdvicePanel } from "@/components/ui/advice-panel";
 import { ScenarioStartGate, type ScenarioChoice } from "@/components/ui/scenario-start-gate";
-import { cn }          from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { getCouplePlan } from "@/lib/finance";
 import { getPortfolio, isProfileEmpty, portfolioToPartnerForm } from "@/lib/portfolio";
 import {
@@ -21,22 +21,24 @@ import {
 } from "@/lib/couple-types";
 import { storeToolSession } from "@/lib/chat";
 
-import { StepAbout }    from "./steps/step-about";
+import { StepAbout } from "./steps/step-about";
 import { StepPartners } from "./steps/step-partners";
-import { StepGoals }    from "./steps/step-goals";
-import { CoupleHero }   from "./results/couple-hero";
-import { SipSplit }     from "./results/sip-split";
-import { HraBlock }     from "./results/hra-block";
-import { TaxPanel }     from "./results/tax-panel";
-import { InsurancePlan} from "./results/insurance-plan";
+import { StepGoals } from "./steps/step-goals";
+import { CoupleHero } from "./results/couple-hero";
+import { SipSplit } from "./results/sip-split";
+import { HraBlock } from "./results/hra-block";
+import { TaxPanel } from "./results/tax-panel";
+import { InsurancePlan } from "./results/insurance-plan";
 import { JointRoadmap } from "./results/joint-roadmap";
 import { AnalysisLoader } from "@/components/ui/analysis-loader";
+import { Users, PiggyBank, TrendingUp } from "lucide-react";
+
 
 // ─── Steps config ─────────────────────────────────────────────────────────────
 const STEPS: { id: number; label: string; icon: LucideIcon }[] = [
-  { id: 1, label: "About You",     icon: Users2 },
+  { id: 1, label: "About You", icon: Users2 },
   { id: 2, label: "Your Profiles", icon: UserRound },
-  { id: 3, label: "Joint Goals",   icon: Target },
+  { id: 3, label: "Joint Goals", icon: Target },
 ];
 
 // ─── Validation ───────────────────────────────────────────────────────────────
@@ -74,7 +76,7 @@ function StepperHeader({
     <div className="flex items-center mb-8">
       {STEPS.map((step, idx) => {
         const isCompleted = current > step.id;
-        const isActive    = current === step.id;
+        const isActive = current === step.id;
         const Icon = step.icon;
         return (
           <div key={step.id} className="flex items-center flex-1 last:flex-none">
@@ -89,8 +91,8 @@ function StepperHeader({
                 isCompleted
                   ? "bg-primary border-primary text-primary-foreground"
                   : isActive
-                  ? "border-primary text-primary bg-background"
-                  : "border-border text-muted-foreground bg-background"
+                    ? "border-primary text-primary bg-background"
+                    : "border-border text-muted-foreground bg-background"
               )}>
                 {isCompleted
                   ? <CheckCircle2 className="h-4 w-4" />
@@ -100,7 +102,7 @@ function StepperHeader({
               <p className={cn(
                 "text-[11px] font-medium hidden sm:block",
                 isActive ? "text-primary" :
-                isCompleted ? "text-foreground" : "text-muted-foreground"
+                  isCompleted ? "text-foreground" : "text-muted-foreground"
               )}>
                 {step.label}
               </p>
@@ -123,10 +125,10 @@ export function CouplePlannerPage() {
   type Phase = "gate" | "wizard" | "review" | "loading" | "result";
 
   const [phase, setPhase] = useState<Phase>("gate");
-  const [step,    setStep   ] = useState(1);
-  const [form,    setForm   ] = useState<CoupleFormState>(DEFAULT_COUPLE_FORM);
-  const [error,   setError  ] = useState("");
-  const [result,  setResult ] = useState<CoupleApiResponse | null>(null);
+  const [step, setStep] = useState(1);
+  const [form, setForm] = useState<CoupleFormState>(DEFAULT_COUPLE_FORM);
+  const [error, setError] = useState("");
+  const [result, setResult] = useState<CoupleApiResponse | null>(null);
 
   async function handleGateChoice(choice: ScenarioChoice) {
     if (choice === "portfolio") {
@@ -141,7 +143,7 @@ export function CouplePlannerPage() {
             partner_a: { ...f.partner_a, ...mapped },
           }));
         }
-      } catch {}
+      } catch { }
     }
     setPhase("wizard");
     setStep(1);
@@ -192,7 +194,7 @@ export function CouplePlannerPage() {
   const avgRetirementYears = Math.max(
     Math.round(
       ((Number(form.partner_a.retirement_age) || 60) - (Number(form.partner_a.age) || 30) +
-       (Number(form.partner_b.retirement_age) || 60) - (Number(form.partner_b.age) || 30)) / 2
+        (Number(form.partner_b.retirement_age) || 60) - (Number(form.partner_b.age) || 30)) / 2
     ),
     1
   );
@@ -223,14 +225,14 @@ export function CouplePlannerPage() {
               </p>
             </div>
 
-            <CoupleHero   result={result.result} nameA={nameA} nameB={nameB} />
-            <SipSplit     result={result.result} nameA={nameA} nameB={nameB}
-                          avgRetirementYears={avgRetirementYears} />
-            <HraBlock     result={result.result} nameA={nameA} nameB={nameB} />
-            <TaxPanel     result={result.result} nameA={nameA} nameB={nameB} />
+            <CoupleHero result={result.result} nameA={nameA} nameB={nameB} />
+            <SipSplit result={result.result} nameA={nameA} nameB={nameB}
+              avgRetirementYears={avgRetirementYears} />
+            <HraBlock result={result.result} nameA={nameA} nameB={nameB} />
+            <TaxPanel result={result.result} nameA={nameA} nameB={nameB} />
             <InsurancePlan result={result.result} nameA={nameA} nameB={nameB} />
-            <JointRoadmap  recommendations={result.result.recommendations}
-                           nameA={nameA} nameB={nameB} />
+            <JointRoadmap recommendations={result.result.recommendations}
+              nameA={nameA} nameB={nameB} />
 
             <div>
               <h2 className="text-base font-semibold mb-3">AI Recommendations</h2>
@@ -253,7 +255,7 @@ export function CouplePlannerPage() {
                 "Generating personalised joint advice...",
               ]}
               stageDelays={[1000, 2000, 3000]}
-              icon={Heart}
+              icon = {Heart}
               iconStatic
               title={`Optimising ${nameA} & ${nameB}'s finances`}
               subtitle="HRA · NPS · SIP · Tax · Insurance"
@@ -262,64 +264,77 @@ export function CouplePlannerPage() {
         )}
 
         {(phase === "gate" || phase === "wizard") && (
-            <div className="bg-card border border-border rounded-xl p-6">
-              {phase === "gate" && (
-                <ScenarioStartGate
-                  toolName="Couple Planner"
-                  prefilledFields="Your profile pre-fills Partner A - Partner B stays blank"
-                  onChoice={handleGateChoice}
-                />
-              )}
-
-              {phase === "wizard" && (
-                <>
-              <StepperHeader
-                current={step}
-                onStepClick={(n) => { setStep(n); setError(""); }}
+          <div className="bg-card border border-border rounded-xl p-6">
+            {phase === "gate" && (
+              <ScenarioStartGate
+                heroProps={{
+                  icon: Users,
+                  badge: "For Couples",
+                  title: "Couple Financial Planner",
+                  subtitle: "Merge two income profiles, split goals intelligently, and build a joint FIRE plan that works for both of you.",
+                  accentClass: "text-pink-500",
+                  bgClass: "bg-pink-500/10",
+                  features: [
+                    { icon: Target, label: "Joint FIRE goal planning" },
+                    { icon: PiggyBank, label: "Smart income split strategy" },
+                    { icon: TrendingUp, label: "Combined corpus projection" },
+                  ],
+                }}
+                toolName="Couple Planner"
+                prefilledFields="Your profile pre-fills Partner A - Partner B stays blank"
+                onChoice={handleGateChoice}
               />
+            )}
 
-              <div className="mb-5">
-                <h2 className="text-base font-semibold">
-                  Step {step}:{" "}
-                  {step === 1 ? "About You Two" :
-                   step === 2 ? "Your Financial Profiles" :
-                   "Joint Goals (Optional)"}
-                </h2>
-              </div>
+            {phase === "wizard" && (
+              <>
+                <StepperHeader
+                  current={step}
+                  onStepClick={(n) => { setStep(n); setError(""); }}
+                />
 
-              {step === 1 && <StepAbout    form={form} onChange={patch} />}
-              {step === 2 && <StepPartners form={form} onChange={patch} />}
-              {step === 3 && <StepGoals    form={form} onChange={patch} />}
-
-              {error && (
-                <div className="mt-4 px-4 py-3 bg-destructive/10 border border-destructive/30 rounded-xl text-sm text-destructive">
-                  {error}
+                <div className="mb-5">
+                  <h2 className="text-base font-semibold">
+                    Step {step}:{" "}
+                    {step === 1 ? "About You Two" :
+                      step === 2 ? "Your Financial Profiles" :
+                        "Joint Goals (Optional)"}
+                  </h2>
                 </div>
-              )}
 
-              <div className={cn(
-                "flex items-center mt-6 pt-4 border-t border-border",
-                step === 1 ? "justify-end" : "justify-between"
-              )}>
-                {step > 1 && (
-                  <Button variant="outline" onClick={goBack} className="gap-1.5">
-                    <ChevronLeft className="h-4 w-4" /> Back
-                  </Button>
+                {step === 1 && <StepAbout form={form} onChange={patch} />}
+                {step === 2 && <StepPartners form={form} onChange={patch} />}
+                {step === 3 && <StepGoals form={form} onChange={patch} />}
+
+                {error && (
+                  <div className="mt-4 px-4 py-3 bg-destructive/10 border border-destructive/30 rounded-xl text-sm text-destructive">
+                    {error}
+                  </div>
                 )}
 
-                {step < 3 ? (
-                  <Button onClick={goNext} className="gap-1.5">
-                    Next <ChevronRight className="h-4 w-4" />
-                  </Button>
-                ) : (
-                  <Button onClick={goNext} size="lg" className="gap-1.5">
-                    <Heart className="h-4 w-4" /> Optimise Our Finances
-                  </Button>
-                )}
-              </div>
-                </>
-              )}
-            </div>
+                <div className={cn(
+                  "flex items-center mt-6 pt-4 border-t border-border",
+                  step === 1 ? "justify-end" : "justify-between"
+                )}>
+                  {step > 1 && (
+                    <Button variant="outline" onClick={goBack} className="gap-1.5">
+                      <ChevronLeft className="h-4 w-4" /> Back
+                    </Button>
+                  )}
+
+                  {step < 3 ? (
+                    <Button onClick={goNext} className="gap-1.5">
+                      Next <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  ) : (
+                    <Button onClick={goNext} size="lg" className="gap-1.5">
+                      <Heart className="h-4 w-4" /> Optimise Our Finances
+                    </Button>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
         )}
       </div>
     </AppShell>

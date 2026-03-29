@@ -93,12 +93,14 @@ export function AppShell({ children }: AppShellProps) {
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        {/* Logo — unchanged */}
-        <div className="flex items-center gap-2.5 h-16 px-5 border-b border-border shrink-0">
-          <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center">
-            <Sparkles className="size-4 text-primary" />
-          </div>
-          <span className="text-base font-semibold">Money Mentor</span>
+        {/* Logo */}
+        <div className="flex items-center h-16 px-5 border-b border-border shrink-0">
+          <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
+            <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Sparkles className="size-4 text-primary" />
+            </div>
+            <span className="text-base font-semibold">Money Mentor</span>
+          </Link>
           <button
             className="ml-auto lg:hidden text-muted-foreground hover:text-foreground"
             onClick={() => setSidebarOpen(false)}
@@ -268,12 +270,12 @@ export function AppShell({ children }: AppShellProps) {
           >
             <Menu className="h-5 w-5" />
           </button>
-          <div className="flex items-center gap-2 ml-2">
+          <Link href="/" className="flex items-center gap-2 ml-2 hover:opacity-80 transition-opacity">
             <div className="size-7 rounded-lg bg-primary/10 flex items-center justify-center">
               <Sparkles className="size-3.5 text-primary" />
             </div>
             <span className="text-sm font-semibold">Money Mentor</span>
-          </div>
+          </Link>
         </header>
 
         <main className="flex-1 overflow-y-auto" data-lenis-prevent>

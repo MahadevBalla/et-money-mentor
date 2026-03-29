@@ -21,14 +21,8 @@ import { OverlapPairs } from "./results/overlap-pairs";
 import { ExpenseAlert } from "./results/expense-alert";
 import { RebalancingPlan } from "./results/rebalancing-plan";
 import { storeToolSession } from "@/lib/chat";
-
-// ─── Feature highlight tiles ──────────────────────────────────────────────────
-const FEATURE_TILES: { icon: LucideIcon; label: string }[] = [
-  { icon: TrendingUp, label: "XIRR vs Nifty" },
-  { icon: ArrowLeftRight, label: "Overlap scan" },
-  { icon: TrendingDown, label: "Expense alert" },
-  { icon: Wrench, label: "Rebalancing" },
-];
+import { ScanSearch, PieChart, AlertCircle } from "lucide-react";
+import { ToolHero } from "@/components/ui/tool-hero";
 
 // ─── Download report (client-side text dump) ─────────────────────────────────
 function downloadReport(data: MFXRayApiResponse) {
@@ -200,26 +194,20 @@ export function MFXRayPage() {
         {/* ── Upload form ── */}
         {!result && !isUploading && (
           <>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">MF Portfolio X-Ray</h1>
-              <p className="text-muted-foreground text-sm mt-1">
-                Upload your CAMS or KFintech consolidated statement for instant XIRR,
-                overlap detection &amp; rebalancing advice.
-              </p>
-            </div>
-
-            {/* Feature highlight tiles */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {FEATURE_TILES.map(({ icon: Icon, label }) => (
-                <div
-                  key={label}
-                  className="flex items-center gap-2 px-3 py-2.5 bg-muted/50 rounded-xl border border-border"
-                >
-                  <Icon className="h-4 w-4 text-primary shrink-0" />
-                  <span className="text-xs font-medium text-foreground">{label}</span>
-                </div>
-              ))}
-            </div>
+            {/* Hero — replaces the plain h1/p header */}
+            <ToolHero
+              icon={ScanSearch}
+              badge="Portfolio X-Ray"
+              title="MF Portfolio X-Ray"
+              subtitle="Upload your CAMS or KFintech statement for instant XIRR, overlap detection, and AI rebalancing advice."
+              accentClass="text-violet-500"
+              bgClass="bg-violet-500/10"
+              features={[
+                { icon: TrendingUp,    label: "XIRR vs Nifty benchmark" },
+                { icon: AlertCircle,   label: "Overlap & redundancy scan" },
+                { icon: Wrench,        label: "AI rebalancing plan" },
+              ]}
+            />
 
             <div className="bg-card border border-border rounded-xl p-6">
               <UploadZone
