@@ -1,0 +1,51 @@
+# docker-compose.yml  (repo root)
+
+services:
+
+  # ── Backend (FastAPI) ───────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: mm-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env          # copy .env.example → .env and fill in secrets
+    environment:
+      # Override DB path so it writes into the mounted volume
+      DATABASE_URL: sqlite+aiosqlite:////app/data/money_mentor.db
+      # Allow requests from the frontend container + localhost
+      ALLOWED_ORIGINS: "http://localhost:3000,http://frontend:3000"
+    volumes:
+      # Persist SQLite database across container restarts
+      - backend_data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ── Frontend (Next.js) ──────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Baked into the Next.js bundle at build time
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+    container_name: mm-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  backend_data:
+    driver: local
