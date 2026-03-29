@@ -14,15 +14,19 @@ export type SupportedLanguage =
   | "kn-IN"
   | "ml-IN";
 
-export const LANGUAGE_LABELS: Record<SupportedLanguage, string> = {
-  "en-IN": "EN",
-  "hi-IN": "HI",
-  "ta-IN": "TA",
-  "te-IN": "TE",
-  "kn-IN": "KN",
-  "ml-IN": "ML",
-};
+// ADD this after LANGUAGE_LABELS in frontend/src/lib/voice.ts
 
+export const LANGUAGE_META: Record<
+  SupportedLanguage,
+  { label: string; name: string; script: string; hint: string }
+> = {
+  "en-IN": { label: "EN", name: "English",   script: "English",   hint: "Indian English" },
+  "hi-IN": { label: "HI", name: "हिंदी",      script: "Devanagari", hint: "Hindi" },
+  "ta-IN": { label: "TA", name: "தமிழ்",     script: "Tamil",      hint: "Tamil" },
+  "te-IN": { label: "TE", name: "తెలుగు",    script: "Telugu",     hint: "Telugu" },
+  "kn-IN": { label: "KN", name: "ಕನ್ನಡ",     script: "Kannada",    hint: "Kannada" },
+  "ml-IN": { label: "ML", name: "മലയാളം",   script: "Malayalam",  hint: "Malayalam" },
+};
 // Cycles shown in the language pill — keep short for mobile
 export const LANG_CYCLE: SupportedLanguage[] = [
   "en-IN",
