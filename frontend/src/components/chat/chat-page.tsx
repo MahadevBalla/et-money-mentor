@@ -148,87 +148,10 @@ export function ChatPage() {
       {/*
         KEY LAYOUT:
         - Outer div is a flex column filling 100% height
-        - Header: shrink-0 (never compresses)
         - Middle scroll area: flex-1 overflow-y-auto
         - Input bar: shrink-0 at the bottom (sticky by being last in the flex col)
       */}
       <div className="fixed inset-x-0 bottom-0 top-16 lg:top-0 lg:left-60 flex flex-col overflow-hidden bg-background">
-
-        {/* ── Header ──────────────────────────────────────────────────────── */}
-        <div className="shrink-0 flex items-center justify-between px-6 py-3 border-b border-border bg-background/80 backdrop-blur-md z-10">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center">
-                <BrainCircuit className="h-5 w-5 text-primary" />
-              </div>
-              {sessionReady && (
-                <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5">
-                  <span className={cn(
-                    "animate-ping absolute inline-flex h-full w-full rounded-full opacity-60",
-                    isStreaming ? "bg-primary" : "bg-emerald-500"
-                  )} />
-                  <span className={cn(
-                    "relative inline-flex rounded-full h-2.5 w-2.5 border border-background",
-                    isStreaming ? "bg-primary" : "bg-emerald-500"
-                  )} />
-                </span>
-              )}
-            </div>
-
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold leading-tight">Money Mentor</span>
-                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                  AI
-                </span>
-              </div>
-              <span className="text-[11px] leading-tight text-muted-foreground">
-                {!sessionReady ? (
-                  <span className="flex items-center gap-1">
-                    <Loader2 className="h-3 w-3 animate-spin" /> Connecting…
-                  </span>
-                ) : isStreaming ? (
-                  <motion.span
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="text-primary font-medium"
-                  >
-                    Thinking…
-                  </motion.span>
-                ) : (
-                  <motion.span key="ready" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                    ET Money Mentor · Financial AI
-                  </motion.span>
-                )}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {isStreaming && (
-              <motion.button
-                initial={{ opacity: 0, scale: 0.85 }}
-                animate={{ opacity: 1, scale: 1 }}
-                onClick={handleStop}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-destructive border border-destructive/30 hover:bg-destructive/10 transition-colors"
-              >
-                <StopCircle className="h-3.5 w-3.5" /> Stop
-              </motion.button>
-            )}
-            {messages.length > 0 && !isStreaming && (
-              <motion.button
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                onClick={handleClear}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                title="Clear chat"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Clear</span>
-              </motion.button>
-            )}
-          </div>
-        </div>
 
         {/* ── Scrollable message area ──────────────────────────────────────── */}
         <div className="flex-1 overflow-y-auto min-h-0">
@@ -236,7 +159,7 @@ export function ChatPage() {
             max-w-5xl = 1024px — wide enough to use the space, 
             px-8 adds breathing room on the sides
           */}
-          <div className="w-full max-w-5xl mx-auto px-8 pt-4 pb-6">
+          <div className="w-full max-w-5xl mx-auto px-8 pt-4 pb-6 h-full flex flex-col">
             {messages.length === 0 ? (
               <SuggestionChips
                 onSelect={handleSend}
