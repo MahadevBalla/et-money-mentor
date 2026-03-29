@@ -96,10 +96,12 @@ export function SlabBreakdown({ result, deductions }: Readonly<Props>) {
       style={{ boxShadow: "var(--shadow-sm)" }}
     >
       {/* ── Header ── */}
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-start justify-between px-5 py-4 bg-surface-2 hover:bg-muted/40 transition-colors text-left"
+        onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setOpen((v) => !v)}
+        className="w-full flex items-start justify-between px-5 py-4 bg-surface-2 hover:bg-muted/40 transition-colors text-left cursor-pointer"
       >
         <div className="space-y-2.5">
           <div>
@@ -157,7 +159,7 @@ export function SlabBreakdown({ result, deductions }: Readonly<Props>) {
         >
           <ChevronDown className="h-4 w-4 text-muted-foreground" />
         </motion.div>
-      </button>
+      </div>
 
       {/* ── Expandable body ── */}
       <AnimatePresence initial={false}>

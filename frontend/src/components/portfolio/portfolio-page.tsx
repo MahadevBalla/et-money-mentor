@@ -158,7 +158,7 @@ export function PortfolioPage() {
                         <tr key={i} className="hover:bg-accent/50 transition-colors">
                           <td className="px-5 py-3">
                             <p className="font-medium truncate" title={h.scheme_name}>{h.scheme_name}</p>
-                            {h.expense_ratio !== undefined && (
+                            {h.expense_ratio != null && (
                               <p className={cn("text-xs", h.expense_ratio > 1 ? "text-amber-600" : "text-muted-foreground")}>
                                 TER: {h.expense_ratio.toFixed(2)}%{h.expense_ratio > 1 ? " ⚠" : ""}
                               </p>

@@ -203,7 +203,7 @@ export interface MFHolding {
   current_nav?: number;
   invested_amount: number;
   current_value: number;
-  expense_ratio?: number;
+  expense_ratio?: number | null;
   category: string;
 }
 
